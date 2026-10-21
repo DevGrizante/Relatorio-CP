@@ -24,8 +24,10 @@ import zipfile
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
+import tomllib
 
-from relatorio import baixar, delta, fmt_taxa, num_br, periodo, referencias, spreads_b, taxas_anbima
+from relatorio import (baixar, delta, fmt_taxa, ipca, nivel, ntnb, num_br, par_duration, periodo, referencias,
+                       spread_over_bps, spreads_b, taxas_anbima)
 
 AQUI = Path(__file__).parent
 PAINEL = AQUI.parent / "cvm-monitor-pro" / "backend"
@@ -149,8 +151,11 @@ def books(linhas, de, ate):
 def secundario(debs_cnpj, cnpj, papeis):
     """Papéis do mesmo emissor com taxa indicativa ANBIMA: a régua para dizer se a emissão saiu cara ou barata."""
     regs = sorted(debs_cnpj.get(digitos(cnpj), []), key=lambda r: iso(r["vencimento"]))
-    cot = [f"{r['ticker']} {fmt_taxa(papeis[r['ticker']]['indice'], papeis[r['ticker']]['taxa1'])} "
-           f"(venc. {r['vencimento'][3:]})" for r in regs if papeis.get(r["ticker"], {}).get("taxa1") is not None]
+    def ind(p):
+        return nivel(p, p["spread1"] if ipca(p) else p["taxa1"])
+
+    cot = [f"{r['ticker']} {ind(papeis[r['ticker']])} (venc. {r['vencimento'][3:]})"
+           for r in regs if papeis.get(r["ticker"], {}).get("taxa1") is not None]
     return "; ".join(cot) or "—"
 
 
@@ -193,12 +198,15 @@ def mi_br(v):
     return "—" if not v else f"{v / 1e6:.1f}".replace(".", ",")
 
 
-def documentos(sel, peso, vol, dmax):
+def documentos(sel, peso, vol, dneg, dind):
     """Tabela dos documentos com as métricas de desempate da régua de notícias."""
-    return tabela(["Entrega", "Emissor", "Maior Δ taxa semana (bps)", "Peso IDA (%)", "Secundário semana R$ mi",
-                   "Categoria", "Tipo", "Assunto", "Link"],
-                  [[x["Data_Entrega"], x["Nome_Companhia"],
-                    por_emissor(dmax, x["CNPJ_Companhia"], x["Nome_Companhia"]) or "—",
+    def m(d, x):
+        v = por_emissor(d, x["CNPJ_Companhia"], x["Nome_Companhia"])
+        return "—" if v is None else v
+
+    return tabela(["Entrega", "Emissor", "Maior Δ negociado (bps)", "Maior Δ indicativo (bps)", "Peso IDA (%)",
+                   "Secundário semana R$ mi", "Categoria", "Tipo", "Assunto", "Link"],
+                  [[x["Data_Entrega"], x["Nome_Companhia"], m(dneg, x), m(dind, x),
                     pct_br(por_emissor(peso, x["CNPJ_Companhia"], x["Nome_Companhia"])),
                     mi_br(por_emissor(vol, x["CNPJ_Companhia"], x["Nome_Companhia"])),
                     x["Categoria"], x["Tipo"], html.unescape(x["Assunto"]), x["Link_Download"]] for x in sel])
@@ -253,13 +261,21 @@ def tickers(debs, cnpjs, nomes, papeis):
 
     def mercado(t):
         p = papeis.get(t, {})
-        taxa = fmt_taxa(p["indice"], p["taxa1"]) if p.get("taxa1") is not None else "—"
-        var = delta(p["indice"], p["taxa1"] - p["taxa0"]) if None not in (p.get("taxa0"), p.get("taxa1")) else "—"
+        c1, c0 = ("spread1", "spread0") if ipca(p) else ("taxa1", "taxa0")
+        ind = nivel(p, p[c1]) if p.get(c1) is not None else "—"
+        dind = "—" if None in (p.get(c0), p.get(c1)) else (
+            f"{round(p[c1] - p[c0]):+d} bps" if ipca(p) else delta(p["indice"], p[c1] - p[c0]))
+        neg = nivel(p, p["neg1"]) if p.get("neg1") is not None else "—"
+        dneg = "—" if None in (p.get("neg0"), p.get("neg1")) else (
+            f"{round(p['neg1'] - p['neg0']):+d} bps" if ipca(p) else delta(p["indice"], p["neg1"] - p["neg0"]))
         vol = "—" if p.get("volume_mm") is None else f"{p['volume_mm']:.1f}".replace(".", ",")
-        return [taxa, var, vol]
+        par = "—" if p.get("par") is None else f"{p['par']:.2f}".replace(".", ",")
+        dur = "—" if p.get("duration") is None else f"{p['duration']:.2f}".replace(".", ",")
+        return [neg, dneg, vol, ind, dind, par, dur]
 
-    return tabela(["Emissor", "Ticker", "Emissão", "Série", "Vencimento", "Índice", "Taxa ANBIMA", "Δ semana",
-                   "Volume B3 semana R$ mi"],
+    return tabela(["Emissor", "Ticker", "Emissão", "Série", "Vencimento", "Índice", "Negociado (média)",
+                   "Δ negociado", "Volume B3 R$ mi", "Indicativa ANBIMA", "Δ indicativa", "% do par",
+                   "Duration (anos)"],
                   [[r["emissor"], r["ticker"], r["emissao"], r["serie"], r["vencimento"], r["indice"], *mercado(r["ticker"])]
                    for r in sel])
 
@@ -278,9 +294,13 @@ def rotina(assunto):
 
 
 def trades_semana(ini, fim):
-    """([(emissor, ticker, volume R$)] dos negócios de debêntures na B3, dias sem base no Highlights)."""
+    """([(emissor, ticker, volume R$, taxa ou None, dia)] dos negócios de debêntures na B3, dias sem base).
+
+    Passagens saem pela mesma classificação do Highlights. A taxa só vem nos negócios que a
+    classificação considera (confirmados, a partir de R$ 1 mi): negócio pequeno entra no volume,
+    não na taxa média."""
     sys.path.insert(0, str(HIGHLIGHTS))
-    from highlights_py import config, fontes
+    from highlights_py import classificacao, config, fontes
     trades, sem_base = [], []
     for d in (ini + timedelta(i) for i in range((fim - ini).days + 1)):
         # Só lê o cache diário do Highlights. Indexar a base daqui gravaria cache
@@ -288,9 +308,33 @@ def trades_semana(ini, fim):
         if not (config.DIR_CACHE / f"trades_{d.isoformat()}.pkl").exists():
             sem_base.append(d)
             continue
-        df = fontes.negocios(d)
-        trades += [(e, t, v or 0) for e, t, v in zip(df["emissor"], df["ticker"], df["volume"])]
+        bruto = fontes.negocios(d)
+        cl = classificacao.classificar(bruto, None, d)
+        passagem = set(cl.index[cl["tipo_match"] == "passagem"])
+        taxa = cl.loc[cl["tipo_match"] != "passagem", "taxa"].to_dict()
+        for i, e, t, v, sit in zip(bruto.index, bruto["emissor"], bruto["ticker"], bruto["volume"], bruto["situacao"]):
+            sit = str(sit).strip().casefold()
+            if i not in passagem and (sit.startswith("confirmad") or sit in ("ok", "")):
+                trades.append((e, t, v or 0, taxa.get(i), d))
     return trades, sem_base
+
+
+def taxa_negociada(trades, ref_ntnb):
+    """{ticker: taxa média ponderada pelo volume} dos negócios com taxa (sem passagens, a partir de R$ 1 mi).
+
+    IPCA+ (ticker em `ref_ntnb`) vira spread em bps sobre a NTN-B de referência no dia do negócio."""
+    soma, peso = Counter(), Counter()
+    for _, t, v, x, d in trades:
+        if x is None or not v:
+            continue
+        if t in ref_ntnb:
+            curva = ntnb(d)
+            if ref_ntnb[t] not in curva:
+                continue
+            x = spread_over_bps(x, curva[ref_ntnb[t]])
+        soma[t] += v * x
+        peso[t] += v
+    return {t: soma[t] / peso[t] for t in peso}
 
 
 def completa(sem_base, taxas_cdi, de, ate):
@@ -298,54 +342,70 @@ def completa(sem_base, taxas_cdi, de, ate):
     return not set(sem_base) & {d for d, _ in taxas_cdi if de <= d <= ate}
 
 
-def papeis_semana(ref0, ref1, trades, debs):
-    """{ticker: remuneração, taxa ANBIMA nos dois fechamentos, volume B3 em R$ mi (None se a base estiver incompleta)}.
+def papeis_semana(ref0, ref1, trades, trades_ant, debs):
+    """{ticker: dados de mercado da semana}, lidos pelo relatorio.py.
 
-    IPCA+ leva ainda o spread em bps sobre a NTN-B de referência nos dois fechamentos e o ano dessa NTN-B."""
+    indice, taxa0/taxa1 (indicativa ANBIMA nos dois fechamentos), par (% do PU par), duration (anos),
+    volume_mm (B3 sem passagens; None se a base estiver incompleta), neg1/neg0 (taxa média negociada
+    na semana e na anterior). IPCA+ leva ainda spread0/spread1 em bps sobre a NTN-B de referência,
+    o ano dessa NTN-B (ntnb), e neg1/neg0 também em bps de spread."""
     a, b = taxas_anbima(ref0), taxas_anbima(ref1)
     sa, sb = spreads_b(ref0), spreads_b(ref1)
+    par = par_duration(ref1)
+    ref_ntnb = {t: r for t, (rem, _, r) in b.items() if rem.startswith("IPCA +") and r}
+    neg1 = taxa_negociada(trades or [], ref_ntnb)
+    neg0 = taxa_negociada(trades_ant or [], ref_ntnb)
     vol = Counter()
-    for _, t, v in trades or []:
+    for _, t, v, _, _ in trades or []:
         vol[t] += v
     todos = set(a) | set(b) | set(vol) | {r["ticker"] for r in debs}
     return {t: {"indice": (b.get(t) or a.get(t) or ("",))[0],
                 "taxa0": a[t][1] if t in a else None, "taxa1": b[t][1] if t in b else None,
+                "par": par[t][0] if t in par else None, "duration": par[t][1] if t in par else None,
                 "volume_mm": None if trades is None else vol[t] / 1e6,
+                "neg1": neg1.get(t), "neg0": neg0.get(t) if trades_ant is not None else None,
                 **({"spread0": sa[t][0] if t in sa else None, "spread1": sb[t][0], "ntnb": sb[t][1]}
                    if t in sb else {})} for t in todos}
 
 
 def volumes(trades, trades_ant, debs):
-    """Volume na B3 em R$ bi, separado pela flag de incentivada (Lei 12.431) do cadastro de debêntures."""
+    """Volume na B3 em R$ bi, sem passagens, separado pela flag de incentivada (Lei 12.431) do cadastro."""
     incent = {r["ticker"] for r in debs if r["incentivada"]}
 
     def soma(tr, flag):
-        return round(sum(v for _, t, v in tr if (t in incent) == flag) / 1e9, 1)
+        return round(sum(v for _, t, v, _, _ in tr if (t in incent) == flag) / 1e9, 1)
 
-    out = {"incentivadas": soma(trades, True), "nao_incentivadas": soma(trades, False),
-           "comentario": "Volume registrado na B3, inclusive operações de passagem."}
+    out = {"incentivadas": soma(trades, True), "nao_incentivadas": soma(trades, False)}
     if trades_ant is not None:
         out |= {"incentivadas_ant": soma(trades_ant, True), "nao_incentivadas_ant": soma(trades_ant, False)}
     return out
 
 
-def maior_delta(debs, papeis):
-    """Maior variação absoluta de taxa (bps) entre os papéis de cada emissor, por chave de `chaves`."""
-    out = {}
+def maiores_deltas(debs, papeis):
+    """(Δ negociado, Δ indicativo): maior variação absoluta em bps entre os papéis de cada emissor.
+
+    IPCA+ usa o spread sobre a NTN-B, para a alta da NTN-B não parecer piora de crédito; % do DI fica de fora."""
+    neg, ind = {}, {}
     for r in debs:
         p = papeis.get(r["ticker"], {})
-        if None in (p.get("taxa0"), p.get("taxa1")) or "do DI" in p["indice"]:
+        if "do DI" in p.get("indice", ""):
             continue
-        d = abs(round((p["taxa1"] - p["taxa0"]) * 100))
-        for k in chaves(r["cnpj"], r["emissor"]):
-            out[k] = max(out.get(k, 0), d)
-    return out
+        escala = 1 if "ntnb" in p else 100  # spread de IPCA+ já está em bps; taxas em %
+        pares = [(neg, p.get("neg0"), p.get("neg1")),
+                 (ind, *((p.get("spread0"), p.get("spread1")) if "ntnb" in p else (p.get("taxa0"), p.get("taxa1"))))]
+        for destino, x0, x1 in pares:
+            if None in (x0, x1):
+                continue
+            d = abs(round((x1 - x0) * escala))
+            for k in chaves(r["cnpj"], r["emissor"]):
+                destino[k] = max(destino.get(k, 0), d)
+    return neg, ind
 
 
 def volume_por_emissor(trades, tk_cnpj):
     """Volume da semana por chave de `chaves`: CNPJ via ticker e, de reserva, o nome do Highlights."""
     vol = Counter()
-    for e, t, v in trades:
+    for e, t, v, _, _ in trades:
         for k in chaves(tk_cnpj.get(t, ""), e):
             vol[k] += v
     return vol
@@ -353,13 +413,23 @@ def volume_por_emissor(trades, tk_cnpj):
 
 def negociados(trades, sem_base):
     vol, qtd = Counter(), Counter()
-    for e, _, v in trades:
+    for e, _, v, _, _ in trades:
         vol[e] += v
         qtd[e] += 1
     dias = ", ".join(f"{d:%d/%m}" for d in sem_base)
     aviso = f"Dias sem base no Highlights (feriado ou base não atualizada): {dias}.\n\n" if sem_base else ""
-    return aviso + tabela(["Emissor", "Volume bruto R$ mi (inclui passagens)", "Negócios"],
+    return aviso + tabela(["Emissor", "Volume R$ mi (sem passagens)", "Negócios"],
                           [[e, f"{v / 1e6:.1f}", qtd[e]] for e, v in vol.most_common(15)])
+
+
+def radar(caminho, ate):
+    """Eventos em aberto do radar.toml; os com data até `ate` precisam de resposta nesta semana."""
+    eventos = tomllib.loads(caminho.read_text(encoding="utf-8")).get("evento", [])
+    return tabela(["Situação", "Data", "Emissor", "Tickers", "Evento", "Desde"],
+                  [["VENCE OU VENCEU: verificar resultado" if e.get("data") and e["data"] <= ate else "em aberto",
+                    f"{e['data']:%d/%m/%Y}" if e.get("data") else "—", e["emissor"], ", ".join(e.get("tickers", [])),
+                    e["evento"], f"{e['desde']:%d/%m/%Y}"]
+                   for e in sorted(eventos, key=lambda e: e.get("data") or date.max)])
 
 
 def tentar(f):
@@ -398,7 +468,8 @@ def main():
     # Volume só vale com a semana inteira na base do Highlights; semana parcial sairia subestimada.
     ok = refs and tr and completa(tr[1], refs[0], ini, fim)
     ok_ant = refs and tr_ant and completa(tr_ant[1], refs[0], ini - timedelta(days=7), fim - timedelta(days=7))
-    papeis, erro_m = tentar(lambda: papeis_semana(refs[1], refs[2], tr[0] if ok else None, regs))
+    papeis, erro_m = tentar(lambda: papeis_semana(refs[1], refs[2], tr[0] if ok else None,
+                                                  tr_ant[0] if ok_ant else None, regs))
     papeis = papeis or {}
     # Emissores citados no dossiê: é para eles que a tarefa precisa trocar "Xª série da Yª emissão" pelo ticker.
     cnpjs = {digitos(x["CNPJ_Companhia"]) for x in docs or []} | {digitos(r["cnpj_emissor"]) for r in semana or []}
@@ -408,7 +479,7 @@ def main():
     tk_cnpj = (u[4] if u else {}) | {r["ticker"]: r["cnpj"] for r in regs if r["cnpj"]}
     peso = u[3] if u else {}
     vol = volume_por_emissor(tr[0], tk_cnpj) if ok else {}
-    dmax = maior_delta(regs, papeis)
+    dneg, dind = maiores_deltas(regs, papeis)
     debs_cnpj = {}
     for r in regs:
         debs_cnpj.setdefault(digitos(r["cnpj"]), []).append(r)
@@ -418,13 +489,15 @@ def main():
         f"Gerado por coletar.py em {date.today():%d/%m/%Y}. Dados brutos: conferir antes de usar no relatório.",
         f"Janela de mercado: fechamento ANBIMA de {refs[1]:%d/%m} a {refs[2]:%d/%m}." if refs
         else f"**Janela de mercado indisponível:** {erro_r!r}",
-        "" if ok else "**Base B3 (Highlights) incompleta na semana:** volumes ficam fora do relatório.",
+        "" if ok else "**Base B3 (Highlights) incompleta na semana:** volumes e taxas negociadas ficam fora do relatório.",
+        "" if erro_m is None else f"**Dados de mercado por papel indisponíveis:** {erro_m!r}",
+        bloco("Radar: eventos em aberto (radar.toml)", lambda: radar(AQUI / "radar.toml", domingo)),
         bloco(f"Emissões com book na semana, a partir de R$ {EMISSAO_MINIMA_MM} mi (painel CVM)",
               lambda: emissoes(exigir(semana, erro_s), debs_cnpj, papeis)),
         bloco("Próximos books, 7 dias (datas BKB e AVM são previsões)",
               lambda: emissoes(exigir(proximos, erro_x), debs_cnpj, papeis)),
         bloco(f"Documentos CVM de {ini:%d/%m} a {domingo:%d/%m}: emissores do universo",
-              lambda: documentos(exigir(docs, erro_d), peso, vol, dmax)),
+              lambda: documentos(exigir(docs, erro_d), peso, vol, dneg, dind)),
         bloco(f"Tickers dos emissores citados, com mercado da semana (fonte: {debs[1] if debs else 'indisponível'}; "
               f"demais emissores em {arq_tickers.name})",
               lambda: tickers(exigir(debs, erro_t)[0], cnpjs, nomes, papeis)),
@@ -442,7 +515,11 @@ def main():
         gravar_tickers(debs[0], arq_tickers)
     saida.write_text("\n\n".join(p for p in partes if p) + "\n", encoding="utf-8")
     # Dados que o relatorio.py usa direto, sem passar pela redação da tarefa.
-    mercado = {"janela": [str(d) for d in refs[1:]] if refs else None, "papeis": papeis}
+    mercado = {"janela": [str(d) for d in refs[1:]] if refs else None, "papeis": papeis,
+               "origem_indexador": {str(r["id"]): origem_indexador(r) for r in semana or []}}
+    curva, _ = tentar(lambda: ntnb(refs[2]))
+    if curva:
+        mercado["ntnb"] = curva  # referência das emissões IPCA+ novas, que ainda não têm NTN-B da ANBIMA
     if ok and regs:
         mercado["volumes"] = volumes(tr[0], tr_ant[0] if ok_ant else None, regs)
     arq_mercado = AQUI / "semanas" / f"{fim}_mercado.json"

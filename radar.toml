@@ -1,0 +1,53 @@
+# Radar da Mesa: eventos em aberto, acompanhados semana a semana.
+# O coletar.py lista no dossiê; os com data até o domingo da semana aparecem como "VENCE OU VENCEU".
+# A tarefa agendada lê, verifica o resultado, atualiza este arquivo e só tira um evento
+# movendo-o para [[resolvido]] com o motivo. Nunca apaga sem registrar.
+#
+# Campos: emissor, tickers, evento, data (opcional, prazo ou data do evento), desde (quando entrou).
+
+[[evento]]
+emissor = "Autopista Régis Bittencourt"
+tickers = ["APRB18", "APRB28"]
+evento = "AGD de APRB28 em segunda convocação: troca de controle para a EPR Participações, novas dívidas de até R$ 1,3 bilhão, liberação das garantias reais e fim do covenant financeiro; com aprovação parcial, a proposta prevê o resgate de APRB28."
+data = 2026-10-23
+desde = 2026-10-16
+
+[[evento]]
+emissor = "Vibra Energia"
+tickers = ["VBBR15"]
+evento = "Resgate antecipado facultativo total de VBBR15, com prêmio de 0,30% a.a. pro rata sobre o prazo remanescente."
+data = 2026-10-29
+desde = 2026-10-14
+
+[[evento]]
+emissor = "Vibra Energia"
+tickers = ["VBBR24"]
+evento = "Resgate antecipado facultativo total de VBBR24, com prêmio de 0,30% a.a. pro rata sobre o prazo remanescente."
+data = 2026-11-17
+desde = 2026-10-14
+
+[[evento]]
+emissor = "Mills"
+tickers = ["MILS18", "MILS19", "MILS29", "MILSA0", "MILSB0", "MILSA1"]
+evento = "Troca de controle com waiver aprovado em 14 e 15/10 (prêmio de 0,50% a.a. multiplicado pela duration); conclusão sujeita à aprovação do CADE."
+desde = 2026-10-15
+
+[[evento]]
+emissor = "Valid"
+tickers = ["VLIDA0"]
+evento = "12ª emissão de R$ 200 milhões (AA+.br, Moody's Local), com coleta de intenções prevista para 20/10; recursos para o resgate antecipado de VLIDA0."
+data = 2026-10-20
+desde = 2026-10-15
+
+[[evento]]
+emissor = "Braskem"
+tickers = []
+evento = "Liquidação da OPA do FIP Shine prevista para 21/10; recuperação extrajudicial protocolada em 24/08, com nova proposta aos credores em preparação."
+data = 2026-10-21
+desde = 2026-10-16
+
+[[evento]]
+emissor = "Oncoclínicas"
+tickers = []
+evento = "Recuperação extrajudicial: prazo de 15 dias, contados da publicação da decisão, para comprovar o quórum de adesão dos credores."
+desde = 2026-10-13

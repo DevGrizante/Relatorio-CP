@@ -15,16 +15,14 @@ Na semana, a taxa das NTN-B fechou 65 bps (yield do IMA-B), o spread das incenti
 
 SPREADS
 Infraestrutura (incentivadas), sobre NTN-B
-Abertura de aproximadamente 10 bps, chegando a cerca de 93 bps, na média ponderada das debêntures do IDA-IPCA Infraestrutura, pela taxa indicativa da ANBIMA sobre a NTN-B de referência.
+Abertura de aproximadamente 10 bps, chegando a cerca de 88 bps, na média ponderada das debêntures do IDA-IPCA Infraestrutura, pela taxa indicativa da ANBIMA sobre a NTN-B de referência.
 
 Tradicionais (DI+), sobre o CDI
 Fechamento de aproximadamente 3 bps, chegando a cerca de 140 bps, na média ponderada das debêntures DI+ do IDA-DI, pelas taxas indicativas da ANBIMA.
 
 VOLUME NEGOCIADO NO SECUNDÁRIO
-Incentivadas: R$ 16,6 bi, ante R$ 10,3 bi na semana anterior.
-Não incentivadas: R$ 9,2 bi, ante R$ 9,1 bi na semana anterior.
-
-Volume registrado na B3, inclusive operações de passagem.
+Incentivadas: R$ 15,2 bi, ante R$ 9,4 bi na semana anterior.
+Não incentivadas: R$ 7,7 bi, ante R$ 8 bi na semana anterior.
 
 NOTÍCIAS CORPORATIVAS
 Hapvida
@@ -62,5 +60,7 @@ Caso esteja acompanhando algum emissor ou vencimento específico, estamos à dis
 
 Abraço,
 Mesa de Crédito BGC
+
+Metodologia: índices e spreads pelo fechamento ANBIMA, de sexta a sexta; spread infra por composição sobre a NTN-B de referência da ANBIMA, ((1 + taxa) / (1 + NTN-B) - 1); volume e taxa negociada pelos negócios registrados na B3, sem operações de passagem; taxa negociada é a média ponderada dos negócios a partir de R$ 1 mi.
 
 Fontes: ANBIMA, B3, Banco Central, CVM, Fitch, S&P, Moody’s Local e comunicados.

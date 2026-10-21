@@ -9,15 +9,18 @@ Calculado sozinho quando ausente no TOML (valor escrito no TOML prevalece):
   - [spread_tradicionais]: spread médio das debêntures DI+ do IDA-DI, pelas taxas
     indicativas da ANBIMA, ponderado por valor de mercado.
 """
+import csv
 import functools
 import json
 import math
+import re
 import sys
 import time
 import tomllib
+import unicodedata
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 IDA_DOWN = "https://www.anbima.com.br/informacoes/ida/IDA_down.asp"
@@ -33,6 +36,16 @@ REF_TRADICIONAIS = "na média ponderada das debêntures DI+ do IDA-DI, pelas tax
 REF_INFRA = ("na média ponderada das debêntures do IDA-IPCA Infraestrutura, pela taxa indicativa da ANBIMA "
              "sobre a NTN-B de referência")
 LIMITE_PALAVRAS = 60  # por notícia, sem contar a linha de mercado
+METODOLOGIA = ("Metodologia: índices e spreads pelo fechamento ANBIMA, de sexta a sexta; spread infra por composição "
+               "sobre a NTN-B de referência da ANBIMA, ((1 + taxa) / (1 + NTN-B) - 1); volume e taxa negociada pelos "
+               "negócios registrados na B3, sem operações de passagem; taxa negociada é a média ponderada dos negócios "
+               "a partir de R$ 1 mi.")
+HISTORICO = Path(__file__).with_name("historico_spreads.csv")
+CAMPOS_HISTORICO = ["ref1", "ref0", "infra_nivel", "infra_var", "trad_nivel", "trad_var"]
+FONTES_AUTOMATICAS = {"ANBIMA", "B3", "Banco Central", "CVM"}
+# Como cada fonte aparece nos comentários "# fonte:" do arquivo da semana (URL ou nome).
+FONTE_ALIAS = {"s&p": ("spglobal",), "comunicados": ("radcvmgovbr", "comunicado", "fatorelevante"),
+               "valoreconomico": ("valor",)}
 
 
 def pct(x):
@@ -152,16 +165,32 @@ def carteira(d, indice):
 
 
 @functools.cache
-def taxas_anbima(d):
-    """{ticker: (remuneração, taxa indicativa %, NTN-B de referência)}: arquivo diário de debêntures da ANBIMA."""
+def debentures_anbima(d):
+    """{ticker: colunas} do arquivo diário de debêntures da ANBIMA (taxa indicativa, % do par, duration...)."""
     txt = baixar(f"https://www.anbima.com.br/informacoes/merc-sec-debentures/arqs/db{d:%y%m%d}.txt")
+    return {c[0]: c for c in (l.split("@") for l in txt.decode("latin-1").splitlines()) if len(c) > 14}
+
+
+@functools.cache
+def taxas_anbima(d):
+    """{ticker: (remuneração, taxa indicativa %, NTN-B de referência)}."""
     out = {}
-    for c in (l.split("@") for l in txt.decode("latin-1").splitlines()):
-        if len(c) > 14:
-            try:
-                out[c[0]] = (c[3], num_br(c[6]), c[14])
-            except ValueError:  # cabeçalho ou papel sem taxa indicativa no dia ("--")
-                pass
+    for t, c in debentures_anbima(d).items():
+        try:
+            out[t] = (c[3], num_br(c[6]), c[14])
+        except ValueError:  # cabeçalho ou papel sem taxa indicativa no dia ("--")
+            pass
+    return out
+
+
+def par_duration(d):
+    """{ticker: (% do PU par, duration em anos)}: base para dizer quanto um resgate ou um waiver vale."""
+    out = {}
+    for t, c in debentures_anbima(d).items():
+        try:
+            out[t] = (num_br(c[11]), num_br(c[12]) / 252)
+        except ValueError:
+            pass
     return out
 
 
@@ -218,13 +247,84 @@ def spread_infra(ini, fim):
     return {"nivel_bps": nivel, "variacao_bps": variacao, "referencia": REF_INFRA}
 
 
+def semanas_fechadas(inicio, fim):
+    """[(fechamento anterior, fechamento da semana)] de cada semana entre `inicio` e `fim`, pelo calendário do CDI."""
+    ultimo = {}
+    for d, _ in taxas_cdi(inicio, fim):
+        if d >= inicio - timedelta(days=7):
+            ultimo[d.isocalendar()[:2]] = d  # último dia útil de cada semana
+    f = sorted(ultimo.values())
+    return [(a, b) for a, b in zip(f, f[1:]) if b >= inicio]
+
+
+def ler_historico():
+    if not HISTORICO.exists():
+        return []
+    with open(HISTORICO, encoding="utf-8", newline="") as f:
+        return [{k: date.fromisoformat(v) if k.startswith("ref") else int(v) for k, v in r.items()}
+                for r in csv.DictReader(f)]
+
+
+def gravar_historico(linhas):
+    unicas = sorted({r["ref1"]: r for r in linhas}.values(), key=lambda r: r["ref1"])
+    with open(HISTORICO, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=CAMPOS_HISTORICO)
+        w.writeheader()
+        w.writerows(unicas)
+
+
+def linha_historico(ref0, ref1, infra, trad):
+    return {"ref1": ref1, "ref0": ref0, "infra_nivel": infra["nivel_bps"], "infra_var": infra["variacao_bps"],
+            "trad_nivel": trad["nivel_bps"], "trad_var": trad["variacao_bps"]}
+
+
+def reconstruir_historico(semanas=52):
+    """Recalcula os spreads semanais das últimas `semanas` pelos arquivos públicos da ANBIMA (rodar uma vez)."""
+    hoje = date.today()
+    linhas = ler_historico()
+    feitas = {r["ref1"] for r in linhas}
+    for ref0, ref1 in semanas_fechadas(hoje - timedelta(weeks=semanas), hoje):
+        if ref1 in feitas or ref1 >= hoje:
+            continue
+        try:
+            pi = {t: v for t, (_, v) in carteira(ref1, "IPCA_INFRAESTRUTURA").items()}
+            pd_ = {t: v for t, (ix, v) in carteira(ref1, "GERAL").items() if ix == "DI"}
+            a, b = ({t: s / 100 for t, (s, _) in spreads_b(d).items()} for d in (ref0, ref1))
+            ni, vi = spread_medio(pi, a, b)
+            nt, vt = spread_medio(pd_, spreads_di(ref0), spreads_di(ref1))
+        except (OSError, SystemExit) as e:
+            print(f"[aviso] semana de {ref1:%d/%m/%Y} sem dados: {e}", file=sys.stderr)
+            continue
+        linhas.append(linha_historico(ref0, ref1, {"nivel_bps": ni, "variacao_bps": vi},
+                                      {"nivel_bps": nt, "variacao_bps": vt}))
+        print(f"{ref1:%d/%m/%Y}: infra {ni} ({vi:+d}), tradicionais {nt} ({vt:+d})")
+        gravar_historico(linhas)
+
+
+def contexto(historico, chave, var, ref1, minimo=8):
+    """"maior abertura semanal desde dd/mm/aaaa" quando nenhuma das últimas `minimo` semanas andou tanto."""
+    anteriores = [h for h in historico if h["ref1"] < ref1]
+    if abs(var) < 5 or len(anteriores) < minimo:
+        return ""
+    tipo = "abertura" if var > 0 else "fechamento"
+    iguais = [i for i, h in enumerate(anteriores) if (h[chave] >= var if var > 0 else h[chave] <= var)]
+    if not iguais:
+        return f"maior {tipo} semanal em {len(anteriores)} semanas"
+    if len(anteriores) - 1 - iguais[-1] < minimo:
+        return ""
+    return f"maior {tipo} semanal desde {anteriores[iguais[-1]]['ref1']:%d/%m/%Y}"
+
+
 def spread(sp):
     d = sp["variacao_bps"]
     if d:
         txt = f"{'Abertura' if d > 0 else 'Fechamento'} de aproximadamente {abs(d)} bps, chegando a cerca de"
     else:
         txt = "Estável, em cerca de"
-    txt += f" {sp['nivel_bps']} bps, {sp.get('referencia') or 'no comparativo semanal reportado pela ' + sp['fonte']}."
+    txt += f" {sp['nivel_bps']} bps"
+    if sp.get("contexto"):
+        txt += f" ({sp['contexto']})"
+    txt += f", {sp.get('referencia') or 'no comparativo semanal reportado pela ' + sp['fonte']}."
     if "data_idex" in sp:
         txt += f" O gráfico IDEX utilizado tem última referência em {ddmm(sp['data_idex'])}."
     return txt
@@ -250,7 +350,7 @@ def leitura(ix, infra, trad):
 
 
 def fmt_taxa(rem, x):
-    """Taxa indicativa na convenção do papel: "DI + 1,95%", "IPCA + 7,83%", "105,20% do DI"."""
+    """Taxa na convenção do papel: "DI + 1,95%", "IPCA + 7,83%", "105,20% do DI"."""
     if rem.startswith(("DI +", "IPCA +")):
         txt = f"{rem.split(' +')[0]} + {x:.2f}%"
     elif "do DI" in rem:
@@ -275,38 +375,52 @@ def volume_txt(v):
     return "menos de R$ 1 mi negociado" if v < 1 else f"{mi(v)} negociados"
 
 
-def taxa_mercado(p):
-    """Taxa do papel no texto: IPCA+ sai como spread sobre a NTN-B de referência; os demais, na convenção do papel."""
-    if p.get("spread1") is None:
-        return fmt_taxa(p["indice"], p["taxa1"])
-    s = round(p["spread1"])
-    return f"NTN-B {p['ntnb']} {'-' if s < 0 else '+'} {abs(s)} bps"
+def ipca(p):
+    """Papel IPCA+ com spread sobre a NTN-B: nível e variação saem em bps de spread, não de taxa."""
+    return "ntnb" in p
 
 
-def variacao_mercado(p):
-    """Variação na semana: do spread sobre a NTN-B nos IPCA+, da taxa nos demais; None sem o fechamento anterior."""
-    if p.get("spread1") is not None:
-        if p.get("spread0") is None:
-            return None
-        b = round(p["spread1"] - p["spread0"])
-        return "estável" if b == 0 else f"{b:+d} bps"
-    return None if p.get("taxa0") is None else delta(p["indice"], p["taxa1"] - p["taxa0"])
+def nivel(p, x):
+    if ipca(p):
+        s = round(x)
+        return f"NTN-B {p['ntnb']} {'-' if s < 0 else '+'} {abs(s)} bps"
+    return fmt_taxa(p["indice"], x)
+
+
+def variacao(p, d):
+    if ipca(p):
+        return "estável" if round(d) == 0 else f"{round(d):+d} bps"
+    return delta(p["indice"], d)
+
+
+def papel_mercado(t, p):
+    """Negócio na B3 (sem passagens) primeiro; a taxa indicativa da ANBIMA é marcação, não preço."""
+    if not p:
+        return f"{t}: sem taxa indicativa ANBIMA nem negócios na B3"
+    partes = []
+    if p.get("neg1") is not None:
+        txt = f"{volume_txt(p.get('volume_mm'))} a {nivel(p, p['neg1'])}"
+        if p.get("neg0") is not None:
+            txt += f" ({variacao(p, p['neg1'] - p['neg0'])} ante a média da semana anterior)"
+        partes.append(txt)
+    elif vt := volume_txt(p.get("volume_mm")):  # sem taxa média: nenhum negócio a partir de R$ 1 mi
+        partes.append(f"{vt}, todos abaixo de R$ 1 mi por negócio" if (p.get("volume_mm") or 0) >= 1 else vt)
+    chave1, chave0 = ("spread1", "spread0") if ipca(p) else ("taxa1", "taxa0")
+    if p.get(chave1) is None:
+        partes.append("sem taxa indicativa ANBIMA")
+    else:
+        ind = f"indicativa ANBIMA {nivel(p, p[chave1])}"
+        if p.get("par") is not None:
+            ind += f", {p['par']:.2f}% do par".replace(".", ",")
+        if p.get(chave0) is not None:
+            ind += f", {variacao(p, p[chave1] - p[chave0])} na semana"
+        partes.append(ind)
+    return f"{t}: " + "; ".join(partes)
 
 
 def linha_mercado(tickers, papeis):
-    """Taxa indicativa ANBIMA, variação na semana e volume na B3 de cada ticker citado."""
-    partes = []
-    for t in tickers:
-        p = papeis.get(t, {})
-        if p.get("taxa1") is None:
-            txt = f"{t} sem taxa indicativa ANBIMA"
-        else:
-            txt = f"{t} a {taxa_mercado(p)}"
-            if (d := variacao_mercado(p)) is not None:
-                txt += f" ({d} na semana)"
-        vt = volume_txt(p.get("volume_mm"))
-        partes.append(f"{txt}, {vt}" if vt else txt)
-    return "Mercado: " + "; ".join(partes) + "."
+    """Bloco "Mercado:" de uma notícia: um papel por linha."""
+    return "Mercado:\n" + "\n".join(f"• {papel_mercado(t, papeis.get(t, {}))}." for t in tickers)
 
 
 def topico(n, papeis):
@@ -322,20 +436,38 @@ def secao(titulo, blocos):
     return [f"{titulo}\n{blocos[0]}", *blocos[1:]] if blocos else []
 
 
-def item_emissao(i, papeis):
+def ntnb_proxima(curva, venc):
+    """(ano, taxa) da NTN-B com vencimento mais próximo de `venc` (MM/AAAA): referência de emissão nova."""
+    m, a = venc.split("/")
+    alvo = date(int(a), int(m), 15)
+    chave = min(curva, key=lambda k: abs((datetime.strptime(k, "%d/%m/%Y").date() - alvo).days))
+    return chave[-4:], curva[chave]
+
+
+def taxa_emissao(i, curva):
+    """Taxa da emissão; IPCA+ ganha o spread sobre a NTN-B, a mesma convenção das linhas de mercado."""
+    m = re.match(r"IPCA \+ ([\d,]+)%", i["taxa"])
+    if not (m and curva and re.fullmatch(r"\d{2}/\d{4}", i["vencimento"])):
+        return i["taxa"]
+    ano, b = ntnb_proxima(curva, i["vencimento"])
+    s = round(spread_over_bps(num_br(m.group(1)), b))
+    return f"{i['taxa']} (NTN-B {ano} {'-' if s < 0 else '+'} {abs(s)} bps)"
+
+
+def item_emissao(i, papeis, curva=None):
     extras = [f"rating {i['rating']}"] if i.get("rating") else []
-    sec = [f"{t} a {taxa_mercado(papeis[t])}" for t in i.get("tickers", [])
-           if papeis.get(t, {}).get("taxa1") is not None]
+    sec = [f"{t} a {nivel(papeis[t], papeis[t]['spread1' if ipca(papeis[t]) else 'taxa1'])}"
+           for t in i.get("tickers", []) if papeis.get(t, {}).get("taxa1") is not None]
     if sec:
-        extras.append("secundário do emissor: " + ", ".join(sec))
-    return (f"• {i['emissor']}: {i['taxa']}, {mi(i['volume_mm'])}, vencimento {i['vencimento']}"
+        extras.append("secundário do emissor (indicativa ANBIMA): " + ", ".join(sec))
+    return (f"• {i['emissor']}: {taxa_emissao(i, curva)}, {mi(i['volume_mm'])}, vencimento {i['vencimento']}"
             + "".join(f"; {x}" for x in extras) + ".")
 
 
-def emissoes(e, papeis):
+def emissoes(e, papeis, curva=None):
     nomes = e.get("aguardando_bookbuilding")
     frase = f"{lista(nomes)} {'tem' if len(nomes) == 1 else 'têm'} bookbuilding previsto para os próximos dias." if nomes else ""
-    itens = [item_emissao(i, papeis) for i in e.get("itens", [])]
+    itens = [item_emissao(i, papeis, curva) for i in e.get("itens", [])]
     return [itens and "Taxas de emissão na semana (registro na CVM):\n" + "\n".join(itens),
             f"{frase} {e.get('comentario', '')}".strip()]
 
@@ -345,15 +477,19 @@ def volume(nome, atual, anterior):
     return f"{nome}: R$ {bi(atual)} bi{ante}."
 
 
-def render(s, mercado=None):
-    """Texto do relatório. `mercado`: volumes e papéis da semana gravados pelo coletar.py."""
+def render(s, mercado=None, historico=()):
+    """Texto do relatório. `mercado`: dados da semana gravados pelo coletar.py; `historico`: spreads semanais."""
     ini, fim = s["semana_inicio"], s["semana_fim"]
-    papeis = (mercado or {}).get("papeis", {})
-    ix, v = s.get("indices", {}), s.get("volumes") or (mercado or {}).get("volumes")
+    m = mercado or {}
+    papeis = m.get("papeis", {})
+    ix, v = s.get("indices", {}), s.get("volumes") or m.get("volumes")
     if not {"ida_di", "cdi", "ida_ipca", "ima_b"} <= ix.keys():
         ix = {**indices_semana(ini, fim), **ix}
-    infra = s.get("spread_infra") or spread_infra(ini, fim)
-    trad = s.get("spread_tradicionais") or spread_tradicionais(ini, fim)
+    infra = dict(s.get("spread_infra") or spread_infra(ini, fim))
+    trad = dict(s.get("spread_tradicionais") or spread_tradicionais(ini, fim))
+    if historico and "janela" in ix:
+        infra["contexto"] = contexto(historico, "infra_var", infra["variacao_bps"], ix["janela"][1])
+        trad["contexto"] = contexto(historico, "trad_var", trad["variacao_bps"], ix["janela"][1])
     c = s.get("credito_bancario") or {}
 
     b = [  # blocos separados por linha em branco
@@ -371,26 +507,84 @@ def render(s, mercado=None):
             + volume("Não incentivadas", v["nao_incentivadas"], v.get("nao_incentivadas_ant")),
             v and v.get("comentario")]),
         *secao("NOTÍCIAS CORPORATIVAS", [topico(n, papeis) for n in s.get("noticias", [])]),
-        *secao("EMISSÕES CORPORATIVAS", emissoes(s["emissoes"], papeis) if "emissoes" in s else []),
+        *secao("EMISSÕES CORPORATIVAS", emissoes(s["emissoes"], papeis, m.get("ntnb")) if "emissoes" in s else []),
         *secao("CRÉDITO BANCÁRIO", ["\n".join(f"• {r}" for r in c.get("ratings", [])), c.get("comentario")]),
         *secao("RADAR", [topico(n, papeis) for n in s.get("radar", [])]),
         DISCLAIMER_FINAL,
         s.get("fechamento", FECHAMENTO),
         f"Abraço,\n{s.get('assinatura', ASSINATURA)}",
+        METODOLOGIA,
         f"Fontes: {lista(s['fontes'])}.",
     ]
     return "\n\n".join(x for x in b if x) + "\n"
 
 
-def main():
-    sys.stdout.reconfigure(encoding="utf-8")
-    arq = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("exemplo.toml")
-    s = tomllib.loads(arq.read_text(encoding="utf-8"))
-    m = arq.parent / f"{s['semana_fim']}_mercado.json"
-    txt = render(s, json.loads(m.read_text(encoding="utf-8")) if m.exists() else None)
+# ----------------------------------------------------------------- verificação
+EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿]")
+SINGULAR = re.compile(r"\b(eu|me|meu|minha|meus|minhas|comigo)\b", re.I)
+ENCHIMENTO = ("seguimos acompanhando", "acompanhamos a demanda", "métricas distintas", "métricas diferentes")
+SERIE_EMISSAO = re.compile(r"\d+ª séries? d[ae] \d+ª emiss", re.I)
+
+
+def sem_acento(s):
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+
+
+def validar(s, txt, bruto, mercado=None):
+    """Problemas que impedem o envio. Lista vazia = pode gerar o texto."""
+    problemas = []
+    if m := EMOJI.search(txt):
+        problemas.append(f"emoji no texto: {m.group()!r}")
+    if m := SINGULAR.search(txt):
+        problemas.append(f"primeira pessoa do singular: {m.group()!r}")
+    problemas += [f"frase de enchimento: {f!r}" for f in ENCHIMENTO if f in txt.lower()]
+    if m := SERIE_EMISSAO.search(txt):
+        problemas.append(f"série/emissão por extenso em vez de ticker: {m.group()!r}")
     for n in s.get("noticias", []):
         if (k := len(n["texto"].split())) > LIMITE_PALAVRAS:
-            print(f"[aviso] notícia {n['titulo']}: {k} palavras, limite {LIMITE_PALAVRAS}", file=sys.stderr)
+            problemas.append(f"notícia {n['titulo']}: {k} palavras, limite {LIMITE_PALAVRAS}")
+    # Toda fonte listada precisa aparecer em algum "# fonte:" do arquivo da semana.
+    comentarios = re.sub(r"[^a-z0-9&]", "", sem_acento(" ".join(re.findall(r"#\s*fonte:(.*)", bruto, re.I))))
+    for f in s.get("fontes", []):
+        if f in FONTES_AUTOMATICAS:
+            continue
+        chave = re.sub(r"[^a-z0-9&]", "", sem_acento(f))
+        if not any(a in comentarios for a in (chave, *FONTE_ALIAS.get(chave, ()))):
+            problemas.append(f"fonte {f!r} listada sem nenhum '# fonte:' correspondente")
+    # Emissão com indexador inferido pelo painel só entra com a conferência registrada.
+    origem = (mercado or {}).get("origem_indexador", {})
+    for i in s.get("emissoes", {}).get("itens", []):
+        req = str(i.get("requerimento", ""))
+        if origem and not req:
+            problemas.append(f"emissão {i['emissor']}: falta o campo requerimento")
+        elif origem.get(req, "declarado na taxa") != "declarado na taxa" and not i.get("conferido"):
+            problemas.append(f"emissão {i['emissor']}: indexador {origem[req]!r} sem o campo conferido")
+    return problemas
+
+
+def main():
+    sys.stdout.reconfigure(encoding="utf-8")
+    if sys.argv[1:] == ["--historico"]:
+        reconstruir_historico()
+        return
+    arq = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("exemplo.toml")
+    bruto = arq.read_text(encoding="utf-8")
+    s = tomllib.loads(bruto)
+    m = arq.parent / f"{s['semana_fim']}_mercado.json"
+    mercado = json.loads(m.read_text(encoding="utf-8")) if m.exists() else None
+    ini, fim = s["semana_inicio"], s["semana_fim"]
+    automatico = "spread_infra" not in s and "spread_tradicionais" not in s
+    s.setdefault("spread_infra", spread_infra(ini, fim))
+    s.setdefault("spread_tradicionais", spread_tradicionais(ini, fim))
+    historico = ler_historico()
+    txt = render(s, mercado, historico)
+    if problemas := validar(s, txt, bruto, mercado):
+        for p in problemas:
+            print(f"[erro] {p}", file=sys.stderr)
+        raise SystemExit("Relatório não gerado: corrija o arquivo da semana e rode de novo.")
+    if automatico:
+        _, ref0, ref1 = referencias(ini, fim)
+        gravar_historico(historico + [linha_historico(ref0, ref1, s["spread_infra"], s["spread_tradicionais"])])
     saida = Path(__file__).with_name("saida") / f"relatorio_{s['semana_fim']}.txt"
     saida.parent.mkdir(exist_ok=True)
     saida.write_text(txt, encoding="utf-8")

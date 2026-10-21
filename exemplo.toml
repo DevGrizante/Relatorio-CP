@@ -7,10 +7,12 @@
 #
 # Calculado sozinho quando o bloco não está no arquivo:
 #   [indices]             ANBIMA e Banco Central, fechamento de sexta a sexta
-#   [spread_infra]        IDA-IPCA Infraestrutura, taxa indicativa ANBIMA sobre a NTN-B de referência
+#   [spread_infra]        IDA-IPCA Infraestrutura, taxa indicativa ANBIMA por composição sobre a NTN-B de referência
 #   [spread_tradicionais] debêntures DI+ do IDA-DI, taxa indicativa ANBIMA
-#   [volumes]             negócios registrados na B3 (semanas/<sexta>_mercado.json, gerado pelo coletar.py)
-#   linha "Mercado:"      taxa ANBIMA, variação e volume B3 dos `tickers` de cada notícia
+#   [volumes]             negócios registrados na B3, sem passagens (semanas/<sexta>_mercado.json, do coletar.py)
+#   bloco "Mercado:"      negócio B3 e indicativa ANBIMA (% do par, variação) dos `tickers` de cada notícia
+# Toda fonte de `fontes` (fora ANBIMA, B3, Banco Central e CVM) precisa de um comentário "# fonte:".
+# Emissão: `requerimento` sempre; `conferido` quando o painel não declara o indexador.
 # Aqui ficam fixos para o exemplo não depender da rede.
 
 semana_inicio = 2026-10-05
@@ -34,7 +36,7 @@ janela = [2026-10-02, 2026-10-09]
 
 [spread_infra]  # positivo = abertura, negativo = fechamento, 0 = estável
 variacao_bps = 10
-nivel_bps = 93
+nivel_bps = 88
 referencia = "na média ponderada das debêntures do IDA-IPCA Infraestrutura, pela taxa indicativa da ANBIMA sobre a NTN-B de referência"
 
 [spread_tradicionais]
@@ -43,14 +45,14 @@ nivel_bps = 140
 referencia = "na média ponderada das debêntures DI+ do IDA-DI, pelas taxas indicativas da ANBIMA"
 
 [volumes]  # volume negociado no secundário, R$ bi
-incentivadas = 16.6
-incentivadas_ant = 10.3
-nao_incentivadas = 9.2
-nao_incentivadas_ant = 9.1
-comentario = "Volume registrado na B3, inclusive operações de passagem."
+incentivadas = 15.2
+incentivadas_ant = 9.4
+nao_incentivadas = 7.7
+nao_incentivadas_ant = 8.0
 
 # Notícias: um bloco por emissor, na ordem da régua (mais grave primeiro).
 # tickers = papéis do emissor envolvidos no evento; o script escreve a linha "Mercado:".
+# fonte: Fitch, ação de rating de Hapvida (exemplo do formato)
 [[noticias]]
 titulo = "Hapvida"
 texto = """
@@ -58,6 +60,7 @@ Fitch reduziu de AA+(bra) para A(bra)/Negativa, destacando consumo de caixa e pr
 Possível efeito: aumento do prêmio exigido e do custo de refinanciamento.
 """
 
+# fonte: S&P, ação de rating de Desktop (exemplo do formato)
 [[noticias]]
 titulo = "Desktop"
 texto = """
@@ -65,6 +68,7 @@ S&P elevou de brA+ para brAAA/Estável após a mudança de controle para a Claro
 Possível efeito: redução do prêmio exigido; avaliamos quanto já está incorporado no preço.
 """
 
+# fonte: comunicado ao mercado da CSN (exemplo do formato)
 [[noticias]]
 titulo = "CSN"
 texto = """
@@ -83,6 +87,7 @@ emissor = "Plano & Plano"
 taxa = "100,50% do DI"
 volume_mm = 150
 vencimento = "10/2031"
+requerimento = 28074
 
 # fonte: painel CVM, requerimento 28248
 [[emissoes.itens]]
@@ -90,7 +95,9 @@ emissor = "Omni Táxi Aéreo"
 taxa = "CDI + 6,75% a.a."
 volume_mm = 100
 vencimento = "10/2028"
+requerimento = 28248
 
+# fonte: S&P (Original) e Moody’s Local (Honda e RCI), ações de rating (exemplo do formato)
 [credito_bancario]
 ratings = [
   "Banco Original: S&P elevou os ratings nacionais de emissor para brA/brA-1, com perspectiva estável.",
