@@ -1,0 +1,148 @@
+# Dados da semana de 12 a 16/10/2026 (segunda, 12/10, feriado nacional).
+# Rascunho gerado automaticamente pela tarefa agendada; revisar antes de enviar.
+# Sem [indices]: o script busca IDA-DI, IDA-IPCA e IMA-B na ANBIMA e o CDI no Banco Central.
+
+semana_inicio = 2026-10-12
+semana_fim = 2026-10-16
+fontes = ["XP Research", "ANBIMA", "Banco Central", "CVM", "IDEX Analytics", "Moody’s Local", "comunicados", "Atlas Público", "Renova Invest"]
+
+# fonte: https://conteudos.xpi.com.br/wp-content/uploads/2026/10/A-Semana-na-Renda-Fixa-12-16out26-XP-Research.pdf
+# XP: spreads das debêntures isentas encerraram a semana em 107,6 bps (vs. 104,4 bps), +3,2 bps; arredondado como no exemplo.
+# Gráfico IDEX-Infra do mesmo relatório (fonte IDEX Analytics) termina em 15/10/26, com 107,60.
+[spread_infra]
+variacao_bps = 3
+nivel_bps = 108
+fonte = "XP"
+data_idex = 2026-10-15
+
+# fonte: https://conteudos.xpi.com.br/wp-content/uploads/2026/10/A-Semana-na-Renda-Fixa-12-16out26-XP-Research.pdf
+# XP: volumes negociados no secundário; não incentivadas R$ 10,8 bi (vs. R$ 8,5 bi), incentivadas R$ 12,6 bi (vs. R$ 13,9 bi).
+[volumes]
+incentivadas = 12.6
+incentivadas_ant = 13.9
+nao_incentivadas = 10.8
+nao_incentivadas_ant = 8.5
+comentario = "Seguimos acompanhando a absorção das ofertas e a liquidez por série. Rentabilidade dos índices e movimento de spread são métricas distintas."
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577545&numSequencia=1102251&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578010&numSequencia=1102716&numVersao=1
+# fonte: https://moodyslocal.com.br/reporte/rating-action/moodys-local-brasil-eleva-cfr-da-valid-para-aa-br-e-atribui-aa-br-a-proposta-de-sua-12a-emissao-de-debentures-perspectiva-estavel/
+[[noticias]]
+titulo = "Valid"
+texto = """
+Moody’s Local elevou o rating corporativo de AA.br para AA+.br/Estável e atribuiu AA+.br à proposta da 12ª emissão de debêntures, de R$ 200 milhões (CDI + 1,25% a.a., vencimento em 10/2031), destinada ao resgate antecipado de VLIDA0 e a reforço de caixa.
+Possível efeito: redução do prêmio exigido nos papéis da companhia; observar a precificação da nova emissão.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577226&numSequencia=1101932&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577228&numSequencia=1101934&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577227&numSequencia=1101933&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577398&numSequencia=1102104&numVersao=1
+[[noticias]]
+titulo = "Mills"
+texto = """
+Debenturistas de MILS18, MILS19, MILS29, MILSA0, MILSB0 e MILSA1 aprovaram, em 14 e 15/10, waiver para a troca de controle sem vencimento antecipado (entre 91,78% e 97,84% das debêntures em circulação), com prêmio de 0,50% a.a. multiplicado pela duration, pago após a conclusão da operação, e definição temporária de dívida líquida incluindo seller's financing até o período encerrado em 30/09/2029.
+Para acompanhar: conclusão da operação, que depende de condições como a aprovação do CADE, e efeito na alavancagem.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577729&numSequencia=1102435&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577728&numSequencia=1102434&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577587&numSequencia=1102293&numVersao=1
+[[noticias]]
+titulo = "Régis Bittencourt"
+texto = """
+As AGDs de APRB18 e APRB28, convocadas para 07/10, não foram instaladas por falta de quórum; APRB28 tem segunda convocação em 23/10 para votar a transferência do controle para a EPR Participações, novas dívidas de até R$ 1,3 bilhão, a liberação das garantias reais e a exclusão de covenants financeiros.
+Para acompanhar: resultado da assembleia e eventuais mudanças nas garantias e obrigações das debêntures.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577537&numSequencia=1102243&numVersao=1
+[[noticias]]
+titulo = "Eneva"
+texto = """
+O Itaú Unibanco fez investimento adicional de R$ 1,777 bilhão na Eneva Participações III, por meio de novas ações preferenciais com voto restrito; a Eneva recebeu opção de compra sobre essas ações, exercível entre 2031 e 2032 ou, em determinadas circunstâncias, antes.
+Para acompanhar: destinação dos recursos e tratamento das ações preferenciais nas métricas de alavancagem.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577579&numSequencia=1102285&numVersao=1
+[[noticias]]
+titulo = "Klabin"
+texto = """
+Aditamentos aos financiamentos do Projeto Puma II alongaram os vencimentos de 2032 para 2034 (A-Loan, com IDB Invest, IFC e JICA) e de 2029 para 2033 (B-Loan, com bancos comerciais), com redução do custo all-in para SOFR + 2,04% a.a.
+Possível efeito: maior prazo médio e menor concentração de amortizações no curto prazo.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577173&numSequencia=1101879&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577172&numSequencia=1101878&numVersao=1
+[[noticias]]
+titulo = "Vibra"
+texto = """
+Anunciou o resgate antecipado facultativo total de VBBR15 em 29/10/2026 (vencimento original em 03/10/2029) e de VBBR24 em 17/11/2026 (vencimento original em 16/11/2031), com prêmio de 0,30% a.a. pro rata pelo prazo remanescente.
+Para acompanhar: forma de refinanciamento e efeito no custo e no prazo médio da dívida.
+"""
+
+# Emissões: itens = books da semana com taxa (dossiê, painel CVM), maiores primeiro.
+# Sem itens em "Próximos books" no dossiê: chave aguardando_bookbuilding omitida.
+[emissoes]
+comentario = "Acompanhamos a demanda, as taxas finais e a comparação com o mercado secundário."
+
+# fonte: painel CVM, requerimento 27959
+[[emissoes.itens]]
+emissor = "LM Transportes"
+taxa = "CDI + 1,80% a.a."
+volume_mm = 750
+vencimento = "10/2030"
+
+# fonte: painel CVM, requerimento 28172
+[[emissoes.itens]]
+emissor = "Cyrela"
+taxa = "99,00% do DI"
+volume_mm = 400
+vencimento = "10/2034"
+
+# fonte: painel CVM, requerimento 28267
+[[emissoes.itens]]
+emissor = "Profarma"
+taxa = "CDI + 1,45% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28304
+[[emissoes.itens]]
+emissor = "Vivara"
+taxa = "CDI + 0,65% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28294
+# Taxa e vencimento conferidos no Termo da 3ª Emissão de Notas Comerciais (cláusulas 5.8.1 e 5.15.1):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576405&numSequencia=1101111&numVersao=1
+[[emissoes.itens]]
+emissor = "Ampla Energia"
+taxa = "CDI + 1,33% a.a."
+volume_mm = 150
+vencimento = "12/2026"
+
+# fonte: painel CVM, requerimento 28275
+# Taxa definida no procedimento de alocação: Tesouro IPCA+ 15/08/2030 + 3,75% a.a. (texto CVM).
+[[emissoes.itens]]
+emissor = "Integra Brasil"
+taxa = "Tesouro IPCA+ 2030 + 3,75% a.a."
+volume_mm = 28
+vencimento = "10/2031"
+
+[credito_bancario]
+ratings = [
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577236&numSequencia=1101942&numVersao=1
+  # fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/
+  "Banco Mercantil do Brasil: Moody’s Local atribuiu ratings de emissor e de depósito de longo prazo AA.br e de depósito de curto prazo ML A-1.br, com perspectiva estável.",
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577179&numSequencia=1101885&numVersao=1
+  # fonte: https://moodyslocal.com.br/reporte/rating-action/moodys-local-brasil-afirma-ratings-a-br-do-bmg-perspectiva-revisada-para-estavel/
+  "Banco BMG: Moody’s Local afirmou o rating de emissor A-.br e revisou a perspectiva de positiva para estável.",
+]
+comentario = "No Mercantil, trata-se de um rating inicial, sem comparação com nota anterior; no BMG, a afirmação veio com a revisão da perspectiva de positiva para estável. Nenhuma das duas ações representa upgrade ou downgrade de nota."
+
+# fonte: https://atlaspublico.com.br/cvm/noticias/braskem-informa-resultado-do-leilao-da-opa-fip-shine-tera-92887
+# fonte: https://renovainvest.com.br/?p=104926
+[[radar]]
+titulo = "Braskem"
+texto = "Fato relevante de 16/10 informou o resultado do leilão da OPA: após a liquidação, prevista para 21/10, o FIP Shine passará a deter 50,11% do capital votante e 34,33% do capital total. Segue no radar a recuperação extrajudicial protocolada em 24/08, sobre cerca de US$ 10,9 bilhões em obrigações quirografárias, e a adesão dos credores ao plano."

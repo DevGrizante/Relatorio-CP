@@ -1,0 +1,199 @@
+# Dados da semana de 12 a 16/10/2026 (segunda, 12/10, feriado nacional).
+# Rascunho gerado pela tarefa agendada em 20/10/2026; revisar antes de enviar.
+# Sem [indices] e sem [spread_tradicionais]: calculados pelo relatorio.py (ANBIMA e Banco Central).
+
+semana_inicio = 2026-10-12
+semana_fim = 2026-10-16
+fontes = ["XP Research", "IDEX Analytics", "ANBIMA", "Banco Central", "CVM", "S&P", "Moody’s Local", "comunicados", "Valor Econômico", "InfoMoney"]
+
+# fonte: https://conteudos.xpi.com.br/wp-content/uploads/2026/10/A-Semana-na-Renda-Fixa-12-16out26-XP-Research.pdf
+# XP: "os spreads das debêntures isentas encerraram a semana em 107,6 bps (vs. 104,4 bps)" = +3,2 bps; arredondado para inteiro.
+# Figura 18 (Prêmio de crédito IDEX-Infra, fonte IDEX Analytics): última referência em 15/10/26, em 107,60.
+[spread_infra]
+variacao_bps = 3
+nivel_bps = 108
+fonte = "XP"
+data_idex = 2026-10-15
+
+# fonte: https://conteudos.xpi.com.br/wp-content/uploads/2026/10/A-Semana-na-Renda-Fixa-12-16out26-XP-Research.pdf
+# XP: não incentivadas R$ 10,8 bilhões (vs. R$ 8,5 bilhões); incentivadas R$ 12,6 bilhões (vs. R$ 13,9 bilhões).
+[volumes]
+incentivadas = 12.6
+incentivadas_ant = 13.9
+nao_incentivadas = 10.8
+nao_incentivadas_ant = 8.5
+comentario = "Seguimos acompanhando a absorção das ofertas e a liquidez por série. Rentabilidade dos índices e movimento de spread são métricas distintas."
+
+# Ranking pela régua: nível 2 por peso IDA (Eneva, Algar, Régis, Mills, Valid), depois nível 3 (Vibra, Klabin, AXIA Energia Sul).
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577537&numSequencia=1102243&numVersao=1
+# régua: nível 2; peso IDA 1,88%; secundário R$ 732,2 mi
+# Classificado como M&A relevante: aporte de R$ 1,777 bi em participação na Eneva III, aprovado pelo CADE como ato de concentração.
+[[noticias]]
+titulo = "Eneva"
+texto = """
+O Itaú Unibanco fez investimento adicional de R$ 1,777 bilhão na Eneva Participações III, por meio de novas ações preferenciais com voto restrito; a Eneva segue com a totalidade das ações ordinárias e recebeu opção de compra sobre as preferenciais do Itaú, exercível entre 01/01/2031 e 31/12/2032 ou, em determinadas circunstâncias, antes. A operação foi aprovada sem restrições pelo CADE.
+Para acompanhar: destinação dos recursos e tratamento das ações preferenciais nas métricas de alavancagem.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578069&numSequencia=1102775&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578070&numSequencia=1102776&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578072&numSequencia=1102778&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578074&numSequencia=1102780&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578008&numSequencia=1102714&numVersao=1
+# régua: nível 2; peso IDA 0,34%; secundário R$ 75,4 mi
+# Nível 2 pela régua (assembleia não instalada). Pauta operacional: troca do agente fiduciário, sem evento de crédito da emissora.
+# ALGAA2 = 12ª emissão, 1ª série (presença 74,28%); ALGAC2 = 12ª emissão, 3ª série (presença 42,66%); ALGTA5 = 15ª (98,52%); ALGTA6 = 16ª (99,48%).
+[[noticias]]
+titulo = "Algar Telecom"
+texto = """
+Com a Trustee DTVM em liquidação extrajudicial, os debenturistas de ALGAA2, ALGTA5 e ALGTA6 aprovaram, em 14/10, a substituição do agente fiduciário pela Pentágono; a AGD de ALGAC2 não foi instalada, com presença de 42,66% das debêntures em circulação, e tem segunda convocação em 26/10.
+Para acompanhar: resultado da segunda convocação de ALGAC2; a troca decorre da situação do agente fiduciário, não de evento de crédito da companhia.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577729&numSequencia=1102435&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577728&numSequencia=1102434&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577748&numSequencia=1102454&numVersao=2
+# régua: nível 2; peso IDA 0,20%; secundário R$ 11,9 mi
+# APRB18 = 8ª emissão, 1ª série; APRB28 = 8ª emissão, 2ª série. Termos de não instalação entregues à CVM em 16/10.
+[[noticias]]
+titulo = "Régis Bittencourt"
+texto = """
+As AGDs de APRB18 e APRB28, convocadas para 07/10, não foram instaladas por falta de quórum, com presença de 11,06% e 52,55%, respectivamente; APRB28 tem segunda convocação em 23/10 para deliberar sobre a transferência do controle para a EPR Participações, novas dívidas de até R$ 1,3 bilhão, a liberação integral das garantias reais e a exclusão de eventos de inadimplemento, entre eles o ligado aos índices financeiros, com waiver fee de pelo menos 0,10% flat se aprovada a pauta completa.
+Para acompanhar: resultado da assembleia; se forem aprovados apenas os itens iniciais da pauta, a proposta prevê o resgate antecipado de APRB28 em até 10 dias úteis após a troca de controle.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577226&numSequencia=1101932&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577228&numSequencia=1101934&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577227&numSequencia=1101933&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577398&numSequencia=1102104&numVersao=1
+# régua: nível 2; peso IDA 0,12%; secundário R$ 52,3 mi
+# Aprovação do waiver: 8ª (MILS18) 91,78%; 9ª (MILS19, MILS29) 93,80%; 10ª (MILSA0, MILSB0) 97,84%; 11ª (MILSA1) 96,89%.
+[[noticias]]
+titulo = "Mills"
+texto = """
+Os debenturistas de MILS18, MILS19, MILS29, MILSA0, MILSB0 e MILSA1 aprovaram, em 14 e 15/10, waiver para a troca de controle sem vencimento antecipado, com adesão entre 91,78% e 97,84% das debêntures em circulação; em contrapartida, haverá prêmio de 0,50% a.a. multiplicado pela duration, pago após a conclusão da operação, e uso temporário de uma definição de dívida financeira líquida que inclui seller's financing.
+Para acompanhar: conclusão da operação, sujeita a condições como a aprovação do CADE, e efeito na alavancagem.
+"""
+
+# fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (15/10/2026)
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577545&numSequencia=1102251&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577429&numSequencia=1102135&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577585&numSequencia=1102291&numVersao=2
+# régua: nível 2; peso IDA 0,05%; secundário R$ 0,2 mi
+# VLIDA0 = 10ª emissão, série única (citada no fato relevante). 12ª emissão ainda sem ticker; coleta de intenções prevista para 20/10.
+[[noticias]]
+titulo = "Valid"
+texto = """
+Moody’s Local elevou o rating corporativo de AA.br para AA+.br, com perspectiva estável, elevou as debêntures em circulação para AA+.br e atribuiu AA+.br à 12ª emissão, de R$ 200 milhões (CDI + 1,25% a.a., vencimento em 20/10/2031), cujos recursos vão ao resgate antecipado de VLIDA0 e a reforço de caixa.
+Possível efeito: redução do prêmio exigido nos papéis da companhia; acompanhamos a precificação da 12ª emissão, com coleta de intenções prevista para 20/10.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577173&numSequencia=1101879&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577172&numSequencia=1101878&numVersao=1
+# régua: nível 3; peso IDA 1,10%; secundário R$ 135,3 mi
+# VBBR15 = 5ª emissão, venc. 03/10/2029; VBBR24 = 4ª emissão, 2ª série, venc. 16/11/2031 (conferidos com os avisos).
+[[noticias]]
+titulo = "Vibra"
+texto = """
+Anunciou o resgate antecipado facultativo total de VBBR15 em 29/10/2026 (vencimento em 03/10/2029) e de VBBR24 em 17/11/2026 (vencimento em 16/11/2031), com prêmio de 0,30% a.a. pro rata temporis pelo prazo remanescente.
+Para acompanhar: forma de refinanciamento e efeito no custo e no prazo médio da dívida.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577579&numSequencia=1102285&numVersao=1
+# régua: nível 3; peso IDA 0,33%; secundário R$ 75,4 mi
+[[noticias]]
+titulo = "Klabin"
+texto = """
+Aditou os financiamentos do Projeto Puma II, com alongamento dos vencimentos de 2032 para 2034 no A-Loan (IDB Invest, IFC e JICA) e de 2029 para 2033 no B-Loan (bancos comerciais), e redução do custo all-in para SOFR + 2,04% a.a.
+Possível efeito: prazo médio mais longo e cronograma de amortizações mais distribuído.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576911&numSequencia=1101617&numVersao=1
+# régua: nível 3; peso IDA 0,16%; secundário R$ 9,7 mi
+# CTGE16 = 6ª emissão, série única, venc. 15/09/2046, IPCA (tabela de tickers); S&P cita vencimento final em setembro de 2046.
+[[noticias]]
+titulo = "AXIA Energia Sul"
+texto = """
+A S&P National Ratings atribuiu brAAA a CTGE16, de R$ 1,4 bilhão, com remuneração de IPCA + 7,8934% a.a., vencimento em setembro de 2046 e garantia da AXIA Energia (brAAA/Estável/brA-1+); os recursos vão aos projetos eólicos Coxilha Negra 2, 3 e 4.
+Para acompanhar: a emissão não tem covenants financeiros, e o rating segue atrelado ao da AXIA Energia, garantidora.
+"""
+
+# Emissões: books da semana com taxa conferida na escritura, no termo de emissão ou no anúncio da CVM, maiores primeiro.
+# "Próximos books" vazio no dossiê: chave aguardando_bookbuilding omitida.
+[emissoes]
+comentario = "Acompanhamos a demanda, as taxas finais e a comparação com o mercado secundário."
+
+# fonte: painel CVM, requerimento 27959
+# Conferido na escritura da 14ª emissão (Taxa DI + 1,80% a.a.; vencimento 16/10/2030):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1569356&numSequencia=1094062&numVersao=1
+[[emissoes.itens]]
+emissor = "LM Transportes"
+taxa = "CDI + 1,80% a.a."
+volume_mm = 750
+vencimento = "10/2030"
+
+# fonte: painel CVM, requerimento 28172
+# Conferido na escritura (99,00% da variação acumulada do DI; vencimento 13/10/2034); anúncio de encerramento de 14/10 (400.000 debêntures):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576135&numSequencia=1100841&numVersao=1
+[[emissoes.itens]]
+emissor = "Cyrela"
+taxa = "99,00% do DI"
+volume_mm = 400
+vencimento = "10/2034"
+
+# fonte: painel CVM, requerimento 28267
+# Conferido na escritura da 3ª emissão (Taxa DI + 1,45% a.a.; vencimento 16/10/2031); anúncio de encerramento de 19/10 (300.000 debêntures):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1575740&numSequencia=1100446&numVersao=1
+[[emissoes.itens]]
+emissor = "Profarma"
+taxa = "CDI + 1,45% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28304
+# Conferido na escritura da 2ª emissão (Taxa DI + 0,65% a.a.; vencimento 15/10/2031):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576554&numSequencia=1101260&numVersao=1
+[[emissoes.itens]]
+emissor = "Vivara"
+taxa = "CDI + 0,65% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28294
+# Painel sem taxa; conferido no Termo da 3ª Emissão de Notas Comerciais (Taxa DI + 1,33% a.a.; vencimento 16/12/2026)
+# e no anúncio de encerramento de 16/10 (150.000 notas comerciais):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576405&numSequencia=1101111&numVersao=1
+[[emissoes.itens]]
+emissor = "Ampla Energia"
+taxa = "CDI + 1,33% a.a."
+volume_mm = 150
+vencimento = "12/2026"
+
+# fonte: painel CVM, requerimento 28275
+# Painel: taxa definida no Procedimento de Alocação (Tesouro IPCA+ 2030 + 3,75% a.a., teto).
+# Taxa final no Anúncio de Início de 19/10 (SRE/CVM): 10,8903% a.a. sobre o Valor Nominal Unitário Atualizado; ITGB11, IPCA.
+# Ainda sem anúncio de encerramento. Volume R$ 27,81 milhões.
+[[emissoes.itens]]
+emissor = "Integra Brasil"
+taxa = "IPCA + 10,89% a.a."
+volume_mm = 28
+vencimento = "10/2031"
+
+[credito_bancario]
+ratings = [
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577236&numSequencia=1101942&numVersao=1
+  # fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (14/10/2026)
+  "Banco Mercantil do Brasil: Moody’s Local atribuiu ratings de emissor e de depósito de longo prazo AA.br e de depósito de curto prazo ML A-1.br, com perspectiva estável.",
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577179&numSequencia=1101885&numVersao=1
+  # fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (14/10/2026)
+  "Banco BMG: Moody’s Local afirmou o rating de emissor A-.br e revisou a perspectiva de positiva para estável.",
+]
+comentario = "No Mercantil, trata-se de rating inicial, sem nota anterior para comparação; no BMG, a reafirmação veio com a revisão da perspectiva de positiva para estável. Nenhuma das duas ações representa upgrade ou downgrade de nota."
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1578099&numSequencia=1102805&numVersao=1
+# fonte: https://www.infomoney.com.br/mercados/entenda-plano-de-recuperacao-extrajudicial-da-braskem-brkm5/
+# fonte: https://conteudos.xpi.com.br/renda-fixa/relatorios/fique-de-olho-na-renda-fixa-outubro-2026/ (19/10, citando o Valor Econômico)
+[[radar]]
+titulo = "Braskem"
+texto = "Fato relevante de 16/10 informou o resultado do leilão da OPA: após a liquidação, prevista para 21/10, o FIP Shine passará a deter 50,11% do capital votante e 34,33% do capital total. Mantemos no radar a recuperação extrajudicial protocolada em 24/08, sobre cerca de US$ 10,9 bilhões em obrigações financeiras quirografárias, e a nova proposta a credores que, segundo o Valor Econômico, a companhia prepara."

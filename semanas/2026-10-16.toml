@@ -1,0 +1,129 @@
+# Dados da semana de 12 a 16/10/2026 (segunda, 12/10, feriado nacional).
+# Rascunho gerado pela tarefa agendada em 20/10/2026; revisar antes de enviar.
+# Sem [indices], [spread_infra], [spread_tradicionais] e [volumes]: calculados pelo relatorio.py
+# (ANBIMA, Banco Central e semanas/2026-10-16_mercado.json).
+# Sem [[radar]]: nenhum tema em andamento de emissor do universo com fato novo verificado na semana.
+
+semana_inicio = 2026-10-12
+semana_fim = 2026-10-16
+fontes = ["ANBIMA", "B3", "Banco Central", "CVM", "Fitch", "S&P", "Moody’s Local", "comunicados"]
+
+destaques = [
+  "Debenturistas da Mills aprovaram waiver para a troca de controle, com prêmio de 0,50% a.a. multiplicado pela duration.",
+  "Moody’s Local elevou a Valid de AA.br para AA+.br, com perspectiva estável.",
+  "Taxas das NTN-B abriram 18 bps; IDA-IPCA caiu 1,77%, abaixo do IMA-B (-1,10%), com abertura de 20 bps no spread infra.",
+]
+
+# Ranking pela régua: nível 2 por maior Δ (Mills 13, Régis Bittencourt 10, Valid 8), depois nível 3 (Vibra).
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577226&numSequencia=1101932&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577228&numSequencia=1101934&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577227&numSequencia=1101933&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577398&numSequencia=1102104&numVersao=1
+# régua: nível 2; maior Δ 13 bps; peso IDA 0,12%; secundário R$ 52,3 mi
+# Aprovação do waiver: 8ª (MILS18) 91,78%; 9ª (MILS19, MILS29) 93,80%; 10ª (MILSA0, MILSB0) 97,84%; 11ª (MILSA1) 96,89%.
+[[noticias]]
+titulo = "Mills"
+tickers = ["MILS18", "MILS29", "MILSA0", "MILSA1"]
+texto = """
+Debenturistas de MILS18, MILS19, MILS29, MILSA0, MILSB0 e MILSA1 aprovaram, em 14 e 15/10, waiver para a troca de controle sem vencimento antecipado, com 91,78% a 97,84% das debêntures em circulação. Contrapartidas: prêmio de 0,50% a.a. multiplicado pela duration e inclusão temporária de seller's financing na dívida líquida dos covenants.
+Para acompanhar: aprovação do CADE e conclusão da operação.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577729&numSequencia=1102435&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577728&numSequencia=1102434&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577747&numSequencia=1102453&numVersao=2
+# régua: nível 2; maior Δ 10 bps; peso IDA 0,20%; secundário R$ 11,9 mi
+# APRB18 = 8ª emissão, 1ª série; APRB28 = 8ª emissão, 2ª série (tabela de tickers e títulos dos documentos).
+# Resgate: se aprovadas só as deliberações (a) a (f), sem as essenciais, APRB28 é resgatada em até 10 dias úteis da troca de controle.
+[[noticias]]
+titulo = "Régis Bittencourt"
+tickers = ["APRB18", "APRB28"]
+texto = """
+AGDs de APRB18 e APRB28 de 07/10 não foram instaladas (presença: 11,06% e 52,55%). APRB28 tem segunda convocação em 23/10: troca de controle para a EPR, dívidas de até R$ 1,3 bilhão, liberação das garantias reais e fim do covenant financeiro, com waiver fee mínimo de 0,10% flat.
+Para acompanhar: com aprovação parcial, a proposta prevê resgate de APRB28.
+"""
+
+# fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (15/10/2026)
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577538&numSequencia=1102244&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577429&numSequencia=1102135&numVersao=1
+# régua: nível 2; maior Δ 8 bps; peso IDA 0,05%; secundário R$ 0,2 mi
+# VLIDA0 = 10ª emissão (afirmada AA+.br); VLIDA1/VLIDB1 = 11ª emissão, 1ª e 2ª séries (elevadas de AA.br). 12ª emissão sem ticker.
+[[noticias]]
+titulo = "Valid"
+tickers = ["VLIDA1", "VLIDB1", "VLIDA0"]
+texto = """
+Moody’s Local elevou o rating corporativo de AA.br para AA+.br/Estável e VLIDA1 e VLIDB1 para AA+.br; afirmou AA+.br de VLIDA0 e atribuiu AA+.br à 12ª emissão, de R$ 200 milhões (CDI + 1,25% a.a., vencimento em 2031), destinada ao resgate de VLIDA0 e a reforço de caixa.
+Possível efeito: redução do prêmio exigido nos papéis da companhia.
+"""
+
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577173&numSequencia=1101879&numVersao=1
+# fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577172&numSequencia=1101878&numVersao=1
+# régua: nível 3; maior Δ 55 bps; peso IDA 1,10%; secundário R$ 135,3 mi
+# VBBR15 = 5ª emissão, venc. 03/10/2029; VBBR24 = 4ª emissão, 2ª série, venc. 16/11/2031 (conferidos com os avisos).
+[[noticias]]
+titulo = "Vibra"
+tickers = ["VBBR15", "VBBR24"]
+texto = """
+Anunciou o resgate antecipado facultativo total de VBBR15 em 29/10/2026 e de VBBR24 em 17/11/2026, com prêmio de 0,30% a.a. pro rata sobre o prazo remanescente até os vencimentos, em 03/10/2029 e 16/11/2031.
+Para acompanhar: origem dos recursos e efeito no custo e no prazo médio da dívida.
+"""
+
+# Emissões: books da semana a partir de R$ 100 mi e prazo de 2 anos ou mais, maiores primeiro.
+# "Próximos books" vazio no dossiê: chave aguardando_bookbuilding omitida.
+# Fora: Ampla Energia (req. 28294), notas comerciais com vencimento em 16/12/2026, prazo de 2 meses
+# (Termo da 3ª Emissão: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576405&numSequencia=1101111&numVersao=1).
+[emissoes]
+
+# fonte: painel CVM, requerimento 27959
+[[emissoes.itens]]
+emissor = "LM Transportes"
+taxa = "CDI + 1,80% a.a."
+volume_mm = 750
+vencimento = "10/2030"
+tickers = ["LMTPB2", "LMTPB1"]
+
+# fonte: painel CVM, requerimento 28172
+[[emissoes.itens]]
+emissor = "Cyrela"
+taxa = "99,00% do DI"
+volume_mm = 400
+vencimento = "10/2034"
+
+# fonte: painel CVM, requerimento 28319
+[[emissoes.itens]]
+emissor = "MEZ 6 Energia"
+taxa = "IPCA + 8,10% a.a."
+volume_mm = 334
+vencimento = "07/2050"
+
+# fonte: painel CVM, requerimento 28267
+[[emissoes.itens]]
+emissor = "Profarma"
+taxa = "CDI + 1,45% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28304
+# Rating: relatório da Fitch de 13/10/2026 (Rating Nacional de Longo Prazo 'AAA(bra)' à 2ª emissão):
+# https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1576946&numSequencia=1101652&numVersao=1
+[[emissoes.itens]]
+emissor = "Vivara"
+taxa = "CDI + 0,65% a.a."
+volume_mm = 300
+vencimento = "10/2031"
+rating = "AAA(bra)"
+tickers = ["VIVA11"]
+
+[credito_bancario]
+ratings = [
+  # fonte: https://brazil.ratings.spglobal.com/ratings/pt/regulatory/ratings-actions (14/10/2026)
+  "Banco Sofisa: S&P National Ratings rebaixou o rating de longo prazo na Escala Nacional Brasil de brAA+ para brAA, com perspectiva estável.",
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577236&numSequencia=1101942&numVersao=1
+  # fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (14/10/2026)
+  "Banco Mercantil do Brasil: Moody’s Local atribuiu ratings de emissor e de depósito de longo prazo AA.br e de depósito de curto prazo ML A-1.br, com perspectiva estável.",
+  # fonte: https://www.rad.cvm.gov.br/ENET/frmDownloadDocumento.aspx?Tela=ext&descTipo=IPE&CodigoInstituicao=1&numProtocolo=1577179&numSequencia=1101885&numVersao=1
+  # fonte: https://moodyslocal.com.br/relatorios/acoes-de-rating/ (14/10/2026)
+  "Banco BMG: Moody’s Local afirmou o rating de emissor A-.br e revisou a perspectiva de positiva para estável.",
+]
+comentario = "O Sofisa teve downgrade de um degrau; no Mercantil, trata-se de rating inicial; no BMG, reafirmação da nota, com perspectiva revisada de positiva para estável."

@@ -1,0 +1,103 @@
+# Dados da semana para o relatório de crédito privado.
+# A tarefa agendada roda coletar.py, cria semanas/<sexta>.toml neste formato e roda
+#   python relatorio.py semanas/2026-10-16.toml
+# Números usam ponto (0.32); o relatório sai com vírgula (+0,32%).
+# Padrão da casa: texto da Mesa, na primeira pessoa do plural ("acompanhamos"), sem emojis.
+# Saudação, fechamento e assinatura são fixos no relatorio.py.
+#
+# Calculado sozinho quando o bloco não está no arquivo:
+#   [indices]             ANBIMA e Banco Central, fechamento de sexta a sexta
+#   [spread_infra]        IDA-IPCA Infraestrutura, taxa indicativa ANBIMA sobre a NTN-B de referência
+#   [spread_tradicionais] debêntures DI+ do IDA-DI, taxa indicativa ANBIMA
+#   [volumes]             negócios registrados na B3 (semanas/<sexta>_mercado.json, gerado pelo coletar.py)
+#   linha "Mercado:"      taxa ANBIMA, variação e volume B3 dos `tickers` de cada notícia
+# Aqui ficam fixos para o exemplo não depender da rede.
+
+semana_inicio = 2026-10-05
+semana_fim = 2026-10-09
+fontes = ["ANBIMA", "B3", "Banco Central", "CVM", "Fitch", "S&P", "Moody’s Local", "comunicados"]
+
+# No máximo 3 frases curtas, só com fatos que estão no corpo do relatório.
+destaques = [
+  "Fitch rebaixou Hapvida para A(bra)/Negativa, citando consumo de caixa.",
+  "NTN-B fecharam 65 bps; IDA-IPCA subiu 3,92%, abaixo dos 4,58% do IMA-B, com abertura de 10 bps no spread infra.",
+  "S&P elevou Desktop para brAAA após a troca de controle para a Claro.",
+]
+
+[indices]  # rentabilidade em %; ntnb_bps = variação do yield do IMA-B
+ida_di = 0.34
+cdi = 0.25
+ida_ipca = 3.92
+ima_b = 4.58
+ntnb_bps = -65
+janela = [2026-10-02, 2026-10-09]
+
+[spread_infra]  # positivo = abertura, negativo = fechamento, 0 = estável
+variacao_bps = 10
+nivel_bps = 93
+referencia = "na média ponderada das debêntures do IDA-IPCA Infraestrutura, pela taxa indicativa da ANBIMA sobre a NTN-B de referência"
+
+[spread_tradicionais]
+variacao_bps = -3
+nivel_bps = 140
+referencia = "na média ponderada das debêntures DI+ do IDA-DI, pelas taxas indicativas da ANBIMA"
+
+[volumes]  # volume negociado no secundário, R$ bi
+incentivadas = 16.6
+incentivadas_ant = 10.3
+nao_incentivadas = 9.2
+nao_incentivadas_ant = 9.1
+comentario = "Volume registrado na B3, inclusive operações de passagem."
+
+# Notícias: um bloco por emissor, na ordem da régua (mais grave primeiro).
+# tickers = papéis do emissor envolvidos no evento; o script escreve a linha "Mercado:".
+[[noticias]]
+titulo = "Hapvida"
+texto = """
+Fitch reduziu de AA+(bra) para A(bra)/Negativa, destacando consumo de caixa e pressão operacional.
+Possível efeito: aumento do prêmio exigido e do custo de refinanciamento.
+"""
+
+[[noticias]]
+titulo = "Desktop"
+texto = """
+S&P elevou de brA+ para brAAA/Estável após a mudança de controle para a Claro.
+Possível efeito: redução do prêmio exigido; avaliamos quanto já está incorporado no preço.
+"""
+
+[[noticias]]
+titulo = "CSN"
+texto = """
+Acordo preliminar para vender a SWT, com valor de firma de €550 milhões, sujeito a ajustes.
+Para acompanhar: conclusão, caixa líquido recebido e redução efetiva da dívida.
+"""
+
+# Emissões a partir de R$ 100 mi e prazo de 2 anos ou mais, maiores primeiro.
+# tickers = papéis do mesmo emissor no secundário, para comparar com a taxa da emissão.
+[emissoes]
+aguardando_bookbuilding = ["CEA", "Cyrela", "Profarma"]
+
+# fonte: painel CVM, requerimento 28074
+[[emissoes.itens]]
+emissor = "Plano & Plano"
+taxa = "100,50% do DI"
+volume_mm = 150
+vencimento = "10/2031"
+
+# fonte: painel CVM, requerimento 28248
+[[emissoes.itens]]
+emissor = "Omni Táxi Aéreo"
+taxa = "CDI + 6,75% a.a."
+volume_mm = 100
+vencimento = "10/2028"
+
+[credito_bancario]
+ratings = [
+  "Banco Original: S&P elevou os ratings nacionais de emissor para brA/brA-1, com perspectiva estável.",
+  "Banco Honda e Banco RCI: Moody’s Local reafirmou AAA.br/Estável.",
+]
+comentario = "O upgrade do Original pode favorecer a percepção de risco e a demanda; as reafirmações de Honda e RCI atualizam o acompanhamento, sem representar upgrades."
+
+[[radar]]
+titulo = "Braskem"
+texto = "Mantemos no radar a negociação de reestruturação, com atenção ao aporte dos acionistas e à recuperação por série de bonds."

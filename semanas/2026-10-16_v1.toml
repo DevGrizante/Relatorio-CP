@@ -1,0 +1,82 @@
+# Dados da semana de 12 a 16/10/2026 (segunda, 12/10, feriado nacional).
+# Rascunho gerado automaticamente; revisar antes de enviar.
+# Sem [indices]: o script busca IDA-DI, IDA-IPCA e IMA-B na ANBIMA e o CDI no Banco Central.
+# Seções omitidas por falta de fonte aberta acessível com dado da semana: [spread_infra], [volumes], [emissoes].
+
+semana_inicio = 2026-10-12
+semana_fim = 2026-10-16
+saudacao = "Bom dia! Tudo bem?"
+assinatura = "Mesa de Crédito BGC"
+fechamento = "Se estiver acompanhando algum emissor ou vencimento específico, me chama para conversarmos."
+fontes = ["XP Research", "ANBIMA", "Banco Central", "Moody’s Local", "comunicados", "Broadcast", "Agência iNFRA", "InfoMoney"]
+
+# fonte: https://moodyslocal.com.br/reporte/rating-action/moodys-local-brasil-eleva-cfr-da-valid-para-aa-br-e-atribui-aa-br-a-proposta-de-sua-12a-emissao-de-debentures-perspectiva-estavel/
+# fonte: https://moodyslocal.com.br/wp-content/uploads/2026/10/ML-BR-PR-Valid-Solucoes-S.A.pdf
+[[noticias]]
+emoji = "🪪"
+titulo = "Valid"
+texto = """
+Moody’s Local elevou o rating corporativo (CFR) de AA.br para AA+.br/Estável e atribuiu AA+.br à proposta da 12ª emissão de debêntures, de R$ 200 milhões, destinada ao resgate antecipado da 10ª emissão.
+Possível efeito: redução do prêmio exigido nos papéis da companhia; observar a precificação da nova emissão.
+"""
+
+# fonte: https://investalk.bb.com.br/radar/justica-registra-fim-do-prazo-para-adesao-na-recuperacao-extrajudicial-da-oncoclinicas
+[[noticias]]
+emoji = "🏥"
+titulo = "Oncoclínicas"
+texto = """
+O juízo da recuperação extrajudicial registrou o fim, em 13/10, do prazo de 90 dias para comprovar a adesão de credores com mais da metade dos créditos de cada espécie, e deu 15 dias, contados da publicação da decisão, para a companhia comprovar o quórum legal.
+Para acompanhar: publicação da decisão, início do prazo e comprovação do quórum.
+"""
+
+# fonte: https://agenciainfra.com/blog/?p=48935
+[[noticias]]
+emoji = "⚡"
+titulo = "Eneva"
+texto = """
+O Itaú Unibanco fez investimento adicional de R$ 1,77 bilhão na subsidiária Eneva Participações III, por meio de novas ações preferenciais com voto restrito; a Eneva recebeu opção de compra sobre essas ações, exercível entre 2031 e 2032.
+Possível efeito: reforço da liquidez da subsidiária; observar o uso dos recursos e o tratamento das preferenciais nas métricas de alavancagem.
+"""
+
+[credito_bancario]
+ratings = [
+  # fonte: https://moodyslocal.com.br/reporte/rating-action/moodys-local-brasil-atribui-ratings-aa-br-ao-mercantil-perspectiva-estavel/
+  # fonte: https://moodyslocal.com.br/wp-content/uploads/2026/10/ML-BR-PR-Banco-Mercantil-do-Brasil-S.A.pdf
+  "Banco Mercantil do Brasil: Moody’s Local atribuiu ratings de emissor e de depósito de longo prazo AA.br e de curto prazo ML A-1.br, com perspectiva estável.",
+  # fonte: https://moodyslocal.com.br/reporte/rating-action/moodys-local-brasil-afirma-ratings-a-br-do-bmg-perspectiva-revisada-para-estavel/
+  # fonte: https://moodyslocal.com.br/wp-content/uploads/2026/10/ML-BR-PR-Banco-BMG-S.A.pdf
+  "Banco BMG: Moody’s Local reafirmou A-.br (emissor e depósito de longo prazo) e ML A-2.br (curto prazo), com perspectiva revisada de positiva para estável.",
+]
+comentario = "No Mercantil, trata-se de um rating inicial, sem comparação com nota anterior; no BMG, a reafirmação vem com a retirada da perspectiva positiva. Nenhuma das duas ações representa upgrade ou downgrade."
+
+# fonte: https://www.infomoney.com.br/onde-investir/renda-fixa-hoje-16102026/
+[ofertas]
+data = 2026-10-16
+plataforma = "XP"
+
+[[ofertas.itens]]
+produto = "CDB Banco XP"
+taxa = "IPCA + 6,980%"
+vencimento = "outubro/2032"
+
+[[ofertas.itens]]
+produto = "CDB Omni"
+taxa = "104,5% do CDI"
+vencimento = "outubro/2028"
+
+[[ofertas.itens]]
+produto = "CDB CloudWalk"
+taxa = "105% do CDI"
+vencimento = "outubro/2029"
+
+[[ofertas.itens]]
+produto = "LCA Fibra"
+taxa = "IPCA + 5,000%"
+vencimento = "outubro/2028"
+
+# fonte: https://atlaspublico.com.br/cvm/noticias/braskem-informa-resultado-do-leilao-da-opa-fip-shine-tera-92887
+# fonte: https://conteudos.xpi.com.br/renda-fixa/relatorios/fique-de-olho-na-renda-fixa-outubro-2026/
+[[radar]]
+emoji = "🌎"
+titulo = "Braskem"
+texto = "O FIP Shine concluiu o leilão da OPA e, após a liquidação prevista para 21/10, passará a deter 50,11% do capital votante e 34,33% do capital total. Segue no radar a negociação da reestruturação, com a preparação de nova proposta aos credores."

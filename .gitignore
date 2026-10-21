@@ -1,0 +1,6 @@
+# Saídas geradas a cada semana (reproduzíveis com coletar.py e relatorio.py)
+saida/
+semanas/*_dossie.md
+semanas/*_mercado.json
+semanas/tickers.csv
+__pycache__/
