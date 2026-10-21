@@ -6,7 +6,7 @@ from pathlib import Path
 from coletar import (completa, maiores_deltas, norm, origem_indexador, por_emissor, rotina, taxa_negociada, tickers,
                      ultima_sexta, volume_por_emissor, volumes)
 from relatorio import (bi, cdi_semana, contexto, item_emissao, janela, leitura, linha_mercado, lista, mi,
-                       numeros_anbima, periodo, render, spread_medio, spread_over_bps, validar)
+                       numeros_anbima, periodo, render, sequencia, spread_medio, spread_over_bps, validar)
 
 aqui = Path(__file__).parent
 
@@ -110,6 +110,11 @@ assert contexto(semanas, "infra_var", 30, hoje) == "maior abertura semanal em 10
 assert contexto(semanas, "infra_var", 8, hoje) == ""   # semana recente já andou 9
 assert contexto(semanas, "infra_var", 3, hoje) == ""   # movimento pequeno
 assert contexto(semanas[:5], "infra_var", 30, hoje) == ""  # histórico curto demais
+# Sequência: semanas seguidas no mesmo sentido, com o acumulado desde o fechamento anterior à primeira.
+serie = [{"ref0": date(2026, 9, 4) + timedelta(weeks=k), "ref1": date(2026, 9, 11) + timedelta(weeks=k), "infra_var": v}
+         for k, v in enumerate([-2, 7, 11, 18, 14, 10])]
+assert sequencia(serie, "infra_var", 20, date(2026, 10, 23)) == "6ª semana seguida de abertura, 80 bps desde 11/09"
+assert sequencia(serie, "infra_var", -5, date(2026, 10, 23)) == ""
 
 # Verificação: o texto não sai com emoji, singular, fonte sem comentário ou indexador não conferido.
 s_ok = {"fontes": ["ANBIMA", "Fitch"], "noticias": [], "emissoes": {"itens": [

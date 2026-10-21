@@ -278,29 +278,6 @@ def linha_historico(ref0, ref1, infra, trad):
             "trad_nivel": trad["nivel_bps"], "trad_var": trad["variacao_bps"]}
 
 
-def reconstruir_historico(semanas=52):
-    """Recalcula os spreads semanais das últimas `semanas` pelos arquivos públicos da ANBIMA (rodar uma vez)."""
-    hoje = date.today()
-    linhas = ler_historico()
-    feitas = {r["ref1"] for r in linhas}
-    for ref0, ref1 in semanas_fechadas(hoje - timedelta(weeks=semanas), hoje):
-        if ref1 in feitas or ref1 >= hoje:
-            continue
-        try:
-            pi = {t: v for t, (_, v) in carteira(ref1, "IPCA_INFRAESTRUTURA").items()}
-            pd_ = {t: v for t, (ix, v) in carteira(ref1, "GERAL").items() if ix == "DI"}
-            a, b = ({t: s / 100 for t, (s, _) in spreads_b(d).items()} for d in (ref0, ref1))
-            ni, vi = spread_medio(pi, a, b)
-            nt, vt = spread_medio(pd_, spreads_di(ref0), spreads_di(ref1))
-        except (OSError, SystemExit) as e:
-            print(f"[aviso] semana de {ref1:%d/%m/%Y} sem dados: {e}", file=sys.stderr)
-            continue
-        linhas.append(linha_historico(ref0, ref1, {"nivel_bps": ni, "variacao_bps": vi},
-                                      {"nivel_bps": nt, "variacao_bps": vt}))
-        print(f"{ref1:%d/%m/%Y}: infra {ni} ({vi:+d}), tradicionais {nt} ({vt:+d})")
-        gravar_historico(linhas)
-
-
 def contexto(historico, chave, var, ref1, minimo=8):
     """"maior abertura semanal desde dd/mm/aaaa" quando nenhuma das últimas `minimo` semanas andou tanto."""
     anteriores = [h for h in historico if h["ref1"] < ref1]
@@ -313,6 +290,21 @@ def contexto(historico, chave, var, ref1, minimo=8):
     if len(anteriores) - 1 - iguais[-1] < minimo:
         return ""
     return f"maior {tipo} semanal desde {anteriores[iguais[-1]]['ref1']:%d/%m/%Y}"
+
+
+def sequencia(historico, chave, var, ref1, minimo=3):
+    """"6ª semana seguida de abertura, 80 bps desde 04/09" quando a semana estende uma série de pelo menos `minimo`."""
+    if var == 0:
+        return ""
+    serie = [h for h in historico if h["ref1"] < ref1]
+    n, soma, desde = 1, var, None
+    for h in reversed(serie):
+        if h[chave] == 0 or (h[chave] > 0) != (var > 0):
+            break
+        n, soma, desde = n + 1, soma + h[chave], h["ref0"]
+    if n < minimo:
+        return ""
+    return f"{n}ª semana seguida de {'abertura' if var > 0 else 'fechamento'}, {abs(soma)} bps desde {desde:%d/%m}"
 
 
 def spread(sp):
@@ -488,8 +480,10 @@ def render(s, mercado=None, historico=()):
     infra = dict(s.get("spread_infra") or spread_infra(ini, fim))
     trad = dict(s.get("spread_tradicionais") or spread_tradicionais(ini, fim))
     if historico and "janela" in ix:
-        infra["contexto"] = contexto(historico, "infra_var", infra["variacao_bps"], ix["janela"][1])
-        trad["contexto"] = contexto(historico, "trad_var", trad["variacao_bps"], ix["janela"][1])
+        for sp, chave in ((infra, "infra_var"), (trad, "trad_var")):
+            partes = [contexto(historico, chave, sp["variacao_bps"], ix["janela"][1]),
+                      sequencia(historico, chave, sp["variacao_bps"], ix["janela"][1])]
+            sp["contexto"] = "; ".join(p for p in partes if p)
     c = s.get("credito_bancario") or {}
 
     b = [  # blocos separados por linha em branco
@@ -564,9 +558,6 @@ def validar(s, txt, bruto, mercado=None):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    if sys.argv[1:] == ["--historico"]:
-        reconstruir_historico()
-        return
     arq = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("exemplo.toml")
     bruto = arq.read_text(encoding="utf-8")
     s = tomllib.loads(bruto)

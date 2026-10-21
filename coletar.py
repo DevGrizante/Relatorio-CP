@@ -3,6 +3,7 @@
 Uso:
     python coletar.py              (semana passada, segunda a sexta)
     python coletar.py 2026-10-16   (semana que termina nessa sexta)
+    python coletar.py --historico  (refaz historico_spreads.csv desde 01/06/2026, pela base do Highlights)
 
 Grava semanas/<sexta>_dossie.md com:
   - emissões com book na semana e próximos books (painel cvm-monitor-pro);
@@ -26,8 +27,9 @@ from datetime import date, timedelta
 from pathlib import Path
 import tomllib
 
-from relatorio import (baixar, delta, fmt_taxa, ipca, nivel, ntnb, num_br, par_duration, periodo, referencias,
-                       spread_over_bps, spreads_b, taxas_anbima)
+from relatorio import (baixar, carteira, delta, gravar_historico, ipca, ler_historico, linha_historico, nivel, ntnb,
+                       num_br, par_duration, periodo, referencias, semanas_fechadas, spread_medio, spread_over_bps,
+                       spreads_b, taxas_anbima)
 
 AQUI = Path(__file__).parent
 PAINEL = AQUI.parent / "cvm-monitor-pro" / "backend"
@@ -432,6 +434,55 @@ def radar(caminho, ate):
                    for e in sorted(eventos, key=lambda e: e.get("data") or date.max)])
 
 
+def historico_base():
+    """Arquivos diários da ANBIMA guardados na base do Highlights (data_base.xlsx), por data.
+
+    A ANBIMA pública só mantém cerca de um mês de arquivos; a base do Highlights guarda desde 01/06/2026.
+    Devolve ({data: {ticker: (remuneração, taxa indicativa %, NTN-B de referência)}}, {data: {venc: taxa NTN-B}})."""
+    sys.path.insert(0, str(HIGHLIGHTS))
+    from highlights_py import config
+    from highlights_py.xlsx_stream import ler_linhas, serial_para_data
+
+    def dia(v):
+        return serial_para_data(int(float(v)))
+
+    deb, curva = {}, {}
+    for aba in ("DI_SPREAD", "IPCA_SPREAD"):
+        for l in ler_linhas(config.BASE_DADOS_XLSX, aba, colunas={"B", "C", "F", "I", "Q"}):
+            try:
+                ref = f"{dia(l['Q']):%d/%m/%Y}" if l.get("Q") else ""
+                deb.setdefault(dia(l["B"]), {})[l["C"].strip()] = (l.get("F", "").strip(), float(l["I"]), ref)
+            except (KeyError, TypeError, ValueError):  # cabeçalho ou papel sem taxa ("--")
+                continue
+    for l in ler_linhas(config.BASE_DADOS_XLSX, "NTNBH", colunas={"B", "E", "H"}):
+        try:
+            curva.setdefault(dia(l["B"]), {})[f"{dia(l['E']):%d/%m/%Y}"] = float(l["H"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return deb, curva
+
+
+def reconstruir_historico():
+    """Spreads semanais desde 01/06/2026, pela base do Highlights e pela carteira do IDA da ANBIMA (rodar uma vez)."""
+    deb, curva = historico_base()
+    hoje = date.today()
+    linhas = [r for r in ler_historico() if r["ref1"].isocalendar()[:2] < hoje.isocalendar()[:2]]
+    for ref0, ref1 in semanas_fechadas(min(deb), hoje):
+        if ref1.isocalendar()[:2] == hoje.isocalendar()[:2] or not {ref0, ref1} <= deb.keys() & curva.keys():
+            continue  # semana ainda aberta ou sem dados na base
+        di = [{t: x for t, (rem, x, _) in deb[d].items() if rem.startswith("DI +")} for d in (ref0, ref1)]
+        ip = [{t: spread_over_bps(x, curva[d][r]) / 100 for t, (rem, x, r) in deb[d].items()
+               if rem.startswith("IPCA +") and r in curva[d]} for d in (ref0, ref1)]
+        pi = {t: v for t, (_, v) in carteira(ref1, "IPCA_INFRAESTRUTURA").items()}
+        pd_ = {t: v for t, (ix, v) in carteira(ref1, "GERAL").items() if ix == "DI"}
+        ni, vi = spread_medio(pi, *ip)
+        nt, vt = spread_medio(pd_, *di)
+        linhas.append(linha_historico(ref0, ref1, {"nivel_bps": ni, "variacao_bps": vi},
+                                      {"nivel_bps": nt, "variacao_bps": vt}))
+        print(f"{ref1:%d/%m/%Y}: infra {ni} ({vi:+d}), tradicionais {nt} ({vt:+d})")
+    gravar_historico(linhas)
+
+
 def tentar(f):
     try:
         return f(), None
@@ -446,6 +497,9 @@ def bloco(titulo, gerar):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
+    if sys.argv[1:] == ["--historico"]:
+        reconstruir_historico()
+        return
     fim = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else ultima_sexta(date.today())
     ini = fim - timedelta(days=4)
     domingo = fim + timedelta(days=2)  # fato relevante de fim de semana entra nesta semana
